@@ -1,0 +1,151 @@
+/* Homelab — by D'Vaughn House. Accent family: sienna-deep #B84A2B (filled
+   surfaces, white text) with bright sienna #E97451 for text accents on the
+   dark ground. Type shared with The Dispatch (blog.dvaughnhouse.com):
+   Bricolage Grotesque for display, Newsreader for body. No purple. */
+:root {
+  --bg: #161210;
+  --bg2: #1e1815;
+  --ink: #f2ece6;
+  --muted: #b8a89c;
+  --accent: #E97451;
+  --accent-deep: #B84A2B;
+  --accent-dim: #9e3e23;
+  --line: #33291f;
+  --card: #201915;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Newsreader', Georgia, 'Times New Roman', serif;
+  font-size: 1.06rem;
+  line-height: 1.65;
+}
+.brand, h1, h2, h3 {
+  font-family: 'Bricolage Grotesque', -apple-system, 'Segoe UI', sans-serif;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.wrap { max-width: 760px; margin: 0 auto; padding: 0 20px; }
+header.site {
+  border-bottom: 1px solid var(--line);
+  padding: 18px 0;
+}
+header.site .wrap { display: flex; align-items: center; justify-content: space-between; }
+.brand { font-weight: 800; font-size: 1.25rem; letter-spacing: 0.02em; }
+.brand span { color: var(--accent); }
+nav.site a { color: var(--muted); margin-left: 22px; font-size: 0.95rem; }
+nav.site a:hover { color: var(--accent); }
+nav.site .auth-signed { color: var(--muted); margin-left: 22px; font-size: 0.95rem; }
+nav.site .auth-signed a { color: var(--muted); margin-left: 0; }
+nav.site .auth-signed a:hover { color: var(--accent); }
+.auth-error { text-align: center; color: var(--accent); font-size: 0.95rem; padding: 12px 16px 0; }
+.signup-banner { border: 1px solid var(--accent); padding: 20px 22px; margin: 28px 0; }
+.signup-banner p { margin: 0 0 10px; }
+.signup-banner p:last-child { margin: 0; }
+.signup-btn { display: inline-block; border: 1px solid var(--accent); color: var(--accent); padding: 8px 18px; text-decoration: none; }
+.signup-btn:hover { background: var(--accent); color: #fff; }
+.hero { padding: 64px 0 40px; }
+.hero h1 { font-size: 2.6rem; line-height: 1.15; margin: 0 0 12px; }
+.hero h1 em { color: var(--accent); font-style: normal; }
+.hero p.sub { color: var(--muted); font-size: 1.15rem; margin: 0 0 8px; }
+.byline { color: var(--muted); font-size: 0.95rem; }
+section.block { padding: 28px 0; }
+h2.sec { font-size: 1.35rem; margin: 0 0 4px; }
+p.secsub { color: var(--muted); margin: 0 0 18px; }
+.post-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin-bottom: 16px;
+}
+.post-card h3 { margin: 0 0 6px; font-size: 1.15rem; }
+.post-card h3 a { color: var(--ink); }
+.post-card h3 a:hover { color: var(--accent); }
+.post-card p { color: var(--muted); margin: 0; font-size: 0.98rem; }
+.badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #161210;
+  background: var(--accent);
+  border-radius: 4px;
+  padding: 2px 8px;
+  margin-left: 10px;
+  vertical-align: middle;
+}
+.badge.draft { background: #d8a03c; }
+.draft-banner {
+  background: #2a2113;
+  border: 1px solid #d8a03c;
+  color: #f0d9a8;
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin: 24px 0;
+  font-size: 0.95rem;
+}
+.newsletter {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 28px;
+  margin: 12px 0 8px;
+}
+.newsletter h2 { margin: 0 0 6px; }
+.newsletter p { color: var(--muted); margin: 0 0 16px; }
+button, input, .badge {
+  font-family: 'Bricolage Grotesque', -apple-system, 'Segoe UI', sans-serif;
+}
+form.subscribe { display: flex; gap: 10px; flex-wrap: wrap; }
+form.subscribe input[type="email"] {
+  flex: 1 1 240px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 1rem;
+}
+form.subscribe button {
+  background: var(--accent-deep);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 22px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+form.subscribe button:hover { background: var(--accent-dim); color: #fff; }
+.privacy { font-size: 0.82rem; color: var(--muted); margin-top: 10px; }
+.form-msg { margin-top: 10px; font-size: 0.95rem; min-height: 1.4em; }
+.form-msg.ok { color: #7fc97f; }
+.form-msg.err { color: #e07a7a; }
+.hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+article.post h1 { font-size: 2rem; line-height: 1.25; margin: 32px 0 6px; }
+article.post .meta { color: var(--muted); font-size: 0.92rem; margin-bottom: 8px; }
+article.post h2 { font-size: 1.25rem; margin: 28px 0 8px; color: var(--accent); }
+article.post p, article.post li { color: #e6ddd4; }
+article.post ul { padding-left: 22px; }
+.tbd { color: var(--muted); font-style: italic; }
+footer.site {
+  border-top: 1px solid var(--line);
+  margin-top: 48px;
+  padding: 24px 0 40px;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+code {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 1px 6px;
+  font-size: 0.92em;
+}
+@media (max-width: 560px) {
+  .hero h1 { font-size: 2rem; }
+}

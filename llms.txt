@@ -1,0 +1,20 @@
+# Homelab
+
+> Homelab is a build log by D'Vaughn House, Independent AI Orchestrator, about running AI on his own hardware — real builds, real benchmarks, no cloud bill.
+
+Homelab is the build log of D'Vaughn House, Independent AI Orchestrator in Cincinnati, Ohio. Every post is something he actually set up, with the hardware, the software, what broke, and whether it is worth copying. No benchmark gets published unless he ran it. Full posts require sign-in; the homepage shows public snippets.
+
+## Core pages
+- [Homelab — by D'Vaughn House](https://homelab.dvaughnhouse.com/index.md): Run AI on your own hardware. Real builds, real benchmarks, no cloud bill.
+- [About — Homelab by D'Vaughn House](https://homelab.dvaughnhouse.com/about.md): Homelab is a build log by D'Vaughn House, Independent AI Orchestrator, about running AI on his own hardware.
+
+## Builds
+- [Builds](https://homelab.dvaughnhouse.com/posts.md): all 20 Homelab builds as public titles and snippets — full posts require sign-in and are not included.
+
+## Machine-readable
+- [Full content](https://homelab.dvaughnhouse.com/llms-full.txt): every public page concatenated
+- [Markdown catalog](https://homelab.dvaughnhouse.com/api/md/_catalog)
+- [Sitemap](https://homelab.dvaughnhouse.com/sitemap.xml)
+- [AI usage policy](https://homelab.dvaughnhouse.com/ai.txt)
+
+<!-- keep in sync with robots.txt and ai.txt -->

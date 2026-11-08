@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Moving a Live Worker Between Machines Without Dropping the Queue — Homelab</title>
+<meta name="description" content="One queue, one worker, one move — and the watchers came along too.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,700,800|newsreader:400,400i,500,600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">Home<span>lab</span></a></div>
+    <nav class="site">
+      <a href="/">Builds</a>
+      <a href="/about.html">About</a>
+      <a href="https://blog.dvaughnhouse.com">The Dispatch</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="post">
+    <h1>Moving a Live Worker Between Machines Without Dropping the Queue</h1>
+    <p class="meta">by D'Vaughn House</p>
+    <p><em>One queue, one worker, one move — and the watchers came along too.</em></p>
+
+<p>I run a small worker that chews through a queue of tasks all day: it picks up the next job, runs it against a model, and records the result. For a while it lived on a small hosted box. Then, on October 27, I moved it to a machine in my own house. Nothing was lost, nothing ran twice, and the queue came out the other side exactly as it went in. This is how the move went, and the one rule it taught me that I will not forget.</p>
+
+<h2>Why the old box had to go cold</h2>
+
+<p>The old box never rebooted. That sounds like stability, but it was not. The platform it ran on pauses the box&#x27;s network after a stretch of idle time, by design. So the worker would go quiet, get resumed, run for a while, and go quiet again. On October 26 it cycled 17 times. On October 27 it cycled 24 times.</p>
+
+<p>Here is the part that made the decision simple. The box itself was contributing almost nothing. The worker&#x27;s models already came through a proxy on the second machine, and the queue already lived in a separate database in the cloud. The box was just a place to host the daemon, the background process that watches the queue and runs the work.</p>
+
+<p>That is also why two daemons sharing one queue would be a disaster. If two workers both watch a single list of jobs, both can grab the same job, or one can mark a job done while the other is still working on it. One queue means one daemon. So the move had a hard rule from the start: the old daemon had to be fully stopped and disabled before the new one started, and it had to stay off afterward. The old box would become cold standby — present, but never running the worker again.</p>
+
+<h2>Match the environment before the first task runs</h2>
+
+<p>Do not rush the new machine live and sort out the differences later. If the new machine runs the work even slightly differently, the first task it picks up becomes an experiment.</p>
+
+<p>So the first step was not the move at all. It was matching. The live code was synced to the new machine fresh — not a stale copy, not a best-guess rebuild — and the new machine&#x27;s runtime was matched to the old one&#x27;s, library for library, so the code would behave the same way in its new home.</p>
+
+<p>The model path needed no change, since the worker was already reaching its models through the proxy on the second machine. And the queue needed no migration at all, because it already lived in the cloud database — the reviews waiting in it would survive the move untouched, because they were never on the old box.</p>
+
+<h2>The cutover, step by step</h2>
+
+<p>A move like this is only safe if the order is right. Here is the order I used on October 27, on my own call:</p>
+
+<p><strong>Wait for an empty moment.</strong> The old daemon was stopped and disabled while no job was actively running. Nothing was mid-task, so nothing could be orphaned.</p>
+
+<p><strong>Sync the live code.</strong> The working code the old daemon had been running was copied to the new machine, as it stood.</p>
+
+<p><strong>Match the runtime, then start the service.</strong> With the code in place and the runtime matched, the new worker was enabled as a service on the new machine, set to start on its own and stay running. Its heartbeat — the regular signal that says &quot;I am alive and watching the queue&quot; — came back fresh within a minute of starting.</p>
+
+<p><strong>Confirm the queue.</strong> Then the check that mattered most: the queue counts on the new machine against the counts from before the move. They were identical — 18 done, 27 failed, 28 reviews pending. Same numbers, same list. Only then was the move done.</p>
+
+<p><strong>Leave the old box cold.</strong> The old daemon stays disabled. That last step is not a cleanup detail; it is the whole point. If the old daemon ever gets re-enabled, two daemons share one queue again, and everything the careful ordering bought is gone.</p>
+
+<h2>The rule the move taught: migrate the watchers too</h2>
+
+<p>Here is the part I got wrong at first. After the worker moved, two things that had watched the old box were still running: an idle watchdog that checked on the box, and a keepalive hook that fired a handoff every time the box flapped. Both were still pointed at the old location, watching a machine that no longer ran anything. Left alone, they would have kept flagging the worker as inactive and sounding alarms about a box that was supposed to be quiet.</p>
+
+<p>At first I treated switching them off as a separate question, something to ask about after the move. That was the mistake. The move was not finished while its watchers still pointed at the old place. So, on my decision that same evening, both were switched off as part of the same move — not deleted, so they could be brought back if ever needed, but disabled, with nothing queued and nothing running. The lesson is now a standing rule in my house: when you move software off broken infrastructure, the move includes everything related to that broken piece. Its watchers, monitors, hooks, and scheduled checks go with it, disabled or removed in the same move. You do not leave orphaned watchers pointing at the old location, and you do not ask separately about them. The decision to migrate already covers them.</p>
+
+<h2>Verdict</h2>
+
+<p>The move worked because the groundwork was already there: the models came through a proxy elsewhere, the queue lived in a database elsewhere, and the old box was only ever a daemon host. The actual work was discipline, not heroics — stop on an empty queue, sync the live code, match the runtime, verify the heartbeat, confirm the queue counts, and leave the old daemon off, watchers included.</p>
+
+<p>Who should copy this: anyone with a worker running on a box that keeps flapping, where the queue and the models already live somewhere else. Check what the box actually contributes before you move. If the answer is &quot;just a place to run the daemon,&quot; the move is mostly ordering and verification. Get the order right, prove the queue survived with the counts, and take the watchers with you.</p>
+
+<p><em>All images on this page are illustrations generated for this article unless otherwise credited.</em></p>
+
+  </article>
+  <p><a href="/">← All builds</a></p>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 D'Vaughn House · Homelab · Run AI on your own hardware.</p>
+    <p><a href="https://blog.dvaughnhouse.com">The Dispatch</a> — research &amp; narrative writing.</p>
+  </div>
+</footer>
+</body>
+</html>

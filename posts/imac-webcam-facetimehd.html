@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The iMac webcam works on Linux — Homelab</title>
+<meta name="description" content="The FaceTime HD camera just needed its firmware: facetimehd-firmware via yay, and /dev/video* came alive.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,700,800|newsreader:400,400i,500,600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">Home<span>lab</span></a></div>
+    <nav class="site">
+      <a href="/">Builds</a>
+      <a href="/about.html">About</a>
+      <a href="https://blog.dvaughnhouse.com">The Dispatch</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="post">
+    <h1>The iMac webcam works on Linux</h1>
+    <p class="meta">by D'Vaughn House</p>
+
+
+    <h2>The goal</h2>
+    <p>Get the iMac's built-in FaceTime HD camera working under Arch Linux. A homelab server with a working camera is a nice bonus — video calls, quick captures, whatever.</p>
+
+    <h2>Hardware and cost</h2>
+    <ul>
+      <li>2017 27" iMac with FaceTime HD camera</li>
+    </ul>
+
+    <h2>Software stack</h2>
+    <ul>
+      <li><strong>Arch Linux</strong> (Omarchy)</li>
+      <li><strong>facetimehd-firmware</strong> — installed via <code>yay</code> (firmware.bin verified OK, boot image rebuilt)</li>
+    </ul>
+
+    <h2>What broke and how it was fixed</h2>
+    <p>Short one: the camera needed its firmware, which Apple doesn't ship in a Linux-friendly way. Installing <code>facetimehd-firmware</code> via <code>yay</code> pulled it in, and after that <code>/dev/video*</code> showed up — video0, live — and the camera was working.</p>
+    <p>How the install command got into my terminal is the part I have to own: I pasted it by clipboard accident. It was sitting in my clipboard from somewhere, and there it was, in the terminal, waiting for Enter. Then I actually looked at what it was going to do, decided it was the right move, and ran it on purpose. Accidental paste, deliberate execution.</p>
+    <p>No driver compilation, no kernel patches, no drama. Sometimes the fix really is one package.</p>
+
+    <h2>Verdict</h2>
+    <p>If your Apple camera is dark under Linux, check for <code>/dev/video*</code> first — if it's missing, you almost certainly just need the firmware package. One install, done.</p>
+  </article>
+  <p><a href="/">← All builds</a></p>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 D'Vaughn House · Homelab · Run AI on your own hardware.</p>
+    <p><a href="https://blog.dvaughnhouse.com">The Dispatch</a> — research &amp; narrative writing.</p>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My local AI stack, and why I run my own infrastructure — Homelab</title>
+<meta name="description" content="Ollama, Open WebUI, Stable Diffusion — the tools on the shelf, and the real reason the cloud doesn't get my work.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,700,800|newsreader:400,400i,500,600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">Home<span>lab</span></a></div>
+    <nav class="site">
+      <a href="/">Builds</a>
+      <a href="/about.html">About</a>
+      <a href="https://blog.dvaughnhouse.com">The Dispatch</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="post">
+    <h1>My local AI stack, and why I run my own infrastructure</h1>
+    <p class="meta">by D'Vaughn House</p>
+
+
+    <h2>The goal</h2>
+    <p>Do serious AI work — models, agents, image generation — on hardware I own, so the work continues no matter what a subscription costs next year. This isn't a hobby setup. It's the backup plan.</p>
+
+    <h2>Hardware and cost</h2>
+    <ul>
+      <li>Mac Studio (M2 Ultra, 64GB unified memory) — model serving over the home network</li>
+      <li>2017 iMac (Omarchy/Arch Linux) — always-on homelab server, runs the agent harness</li>
+    </ul>
+
+    <h2>Software stack</h2>
+    <ul>
+      <li><strong>LM Studio</strong> — model serving with an OpenAI-compatible API</li>
+      <li><strong>Ollama</strong> — lightweight model runner, part of the regular rotation</li>
+      <li><strong>Open WebUI</strong> — chat interface for local models</li>
+      <li><strong>Stable Diffusion</strong> — local image generation</li>
+      <li><strong>Local agent harness</strong> — lives on the iMac, talks to the Mac Studio's models over the LAN</li>
+    </ul>
+
+    <h2>Why self-hosted</h2>
+    <p>The honest reason: it's a hedge. Money's tight — I'm on the free tier and can't justify $20/month for Power. If pricing ever forces me off the paid tiers entirely, the work doesn't stop — the models are already here, on my machines, under my control. Independence isn't a philosophy project; it's what keeps the lights on.</p>
+    <p>The part that made the economics real for me: the API is metered per token, not flat. Architect-tier consults run cents a pop if you only call the architect when you need one. That's the whole design of the harness — a builder model for the routine work, the reasoning model only when the question earns it.</p>
+
+    <h2>What broke and how it was fixed</h2>
+    <p>The current lineup, as actually served: the builder and swarm run Qwen3-32B, the architect runs DeepSeek-R1-Distill-Qwen-32B, and a Qwen 35B A3B build sits as backup. Getting there was a whole saga of downloads, LM Studio's exact served identifiers (config model IDs have to match what LM Studio actually serves — no guessing), and one memorable exchange where LM Studio said port 1235 and I'd assumed 1234. "It says 1235 not 1234" — my words, in my terminal, fixing my own config.</p>
+    <p>The harness lives on the iMac and reaches the Studio at <code>http://192.168.1.187:1235/v1</code>. For a while the iMac couldn't reach it at all — the Studio's server was bound to localhost. That fix is mine to finish: the LAN serving has to be enabled on LM Studio's Server tab. One checkbox between the harness and a working two-machine setup.</p>
+
+    <h2>Verdict</h2>
+    <p>If your AI bill is a line item you're worried about, a Mac Studio and an old iMac get you a long way. Run the heavy models where the memory is, run the agents where the uptime is, and only pay per token when the question is worth it.</p>
+  </article>
+  <p><a href="/">← All builds</a></p>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 D'Vaughn House · Homelab · Run AI on your own hardware.</p>
+    <p><a href="https://blog.dvaughnhouse.com">The Dispatch</a> — research &amp; narrative writing.</p>
+  </div>
+</footer>
+</body>
+</html>

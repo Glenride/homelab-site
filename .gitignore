@@ -1,0 +1,13 @@
+# Secrets and build output — never committed
+.env*
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+*credentials*
+.DS_Store
+node_modules/
+dist/
+_site/
+.wrangler/

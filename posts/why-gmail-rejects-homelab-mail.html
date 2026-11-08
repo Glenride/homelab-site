@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Why Gmail Rejects Mail From Your Homelab (and the Relay That Fixed Mine) — Homelab</title>
+<meta name="description" content="One evening, one failed invite, and the lesson that a home connection is not a mail server — no matter how correct your setup is.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,700,800|newsreader:400,400i,500,600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">Home<span>lab</span></a></div>
+    <nav class="site">
+      <a href="/">Builds</a>
+      <a href="/about.html">About</a>
+      <a href="https://blog.dvaughnhouse.com">The Dispatch</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="post">
+    <h1>Why Gmail Rejects Mail From Your Homelab (and the Relay That Fixed Mine)</h1>
+    <p class="meta">by D'Vaughn House</p>
+    <p><em>One evening, one failed invite, and the lesson that a home connection is not a mail server — no matter how correct your setup is.</em></p>
+
+<p>It started with a staff invite that would not send. I was trying to add a collaborator to my blog, and the blog kept failing at the same step: sending the invite email. The error said the connection was refused by a local test-mail port that nothing on the machine was listening on. There was no mail service running at all. The blog was trying to hand its mail to a service that had never existed on that machine.</p>
+
+<h2>Development mode was quietly rewriting my mail settings</h2>
+
+<p>The blog had been running in development mode. That sounds harmless — a mode flag, not a configuration — but in development mode the blog software injects its own built-in mail defaults. Those defaults point transactional mail at a local test-mail target, the kind of throwaway inbox developers use to catch outgoing mail while testing. My site configuration only overrode one thing: the transport name, set to "Direct." It never overrode the target those development defaults had already injected. So every transactional email — sign-in verification, staff invites, all of it — went looking for a local test-mail server that was never set up, and died with a connection-refused error.</p>
+
+<p>The fix seemed obvious: flip the blog to production mode, which does not inject the test-mail defaults. I flipped the switch, and the blog crash-looped.</p>
+
+<p>Production mode has its own built-in defaults, and they expect a standalone database server that my setup does not have. The blog went down for about a minute, serving errors, until I added one more configuration line pointing production at the file-based database the blog already used. Then the blog came back up, everything normal except mail, which was still unverified. Two config traps, hiding inside one mode switch, and I had walked into both of them in the same evening.</p>
+
+<p>That is the first lesson, stated plainly: a mode flag is not a single setting. It is a bundle of defaults, and if your own configuration only overrides part of the bundle, the parts you did not touch are still making decisions for you.</p>
+
+<h2>The "Direct" transport that isn't</h2>
+
+<p>With the blog in production mode, I expected mail to work. It did not. A later invite attempt failed again, this time against the standard mail submission port. So I dug into what "Direct" actually does in this version of the blog software, and found the second trap: nothing.</p>
+
+<p>In this combination of blog software and mail library, the "Direct" transport is broken. The blog's mail code passes a direct-delivery flag to the mail library, but the library version in use has no direct-delivery branch at all. With nowhere else to go, it silently falls through to ordinary local mail delivery — trying a mail server on the machine itself. My resolved mail configuration was clean: transport set to "Direct," no stray options, nothing wrong with it. The break was in the library, not in my config.</p>
+
+<h2>Building the relay, and doing the authentication properly</h2>
+
+<p>Once I understood that, the path forward was clear: stop asking the blog to deliver mail itself, and give it a real mail relay to hand mail to. I built one as a separate container on the same machine: a send-only mail relay that the blog talks to, which then delivers mail directly to recipients' mail servers.</p>
+
+<p>Then I did the authentication properly, because I already knew what would happen if I did not. The first test delivery to the big provider bounced with an authentication failure — the message carried no proof it came from an authorized sender. So I published a sender-policy record for the blog's domain, naming the home connection as an authorized sender, and waited. It still bounced: the provider had cached the absence of that record, and caches do not care that you just fixed the problem.</p>
+
+<p>Then I added signed mail: a strong signing key for the relay, the matching public key published in DNS, and a signing service so every outgoing message carried proof it came from the blog's domain. The relay was now doing everything right. I sent another signed test to the big provider.</p>
+
+<p>It bounced with a new error, and this one was the end of the road: the home connection's address is not authorized to send mail directly to the provider's servers. The provider blocks direct delivery from residential internet connections outright, regardless of sender policy, regardless of signatures, regardless of how correct the setup is.</p>
+
+<p>That is the part nobody tells you when you start self-hosting mail, and it is the part I want to be loudest about: you can do everything right and still be rejected, because the rejection is not about your setup. It is about where your mail comes from. A home connection is, in the eyes of the big providers, not a mail server. No amount of correct DNS records changes that verdict.</p>
+
+<h2>The honest ending</h2>
+
+<p>So here is where the evening ended, and I am not going to dress it up. The relay is built, and it is correct. Direct delivery from a home connection is a dead end. The chosen path is a provider relay — Resend — a mail-sending service that accepts mail from the blog and delivers it from its own authorized infrastructure.</p>
+
+<p>That wiring is not done yet. As of this writing, mail does not flow to the provider, and I am not going to claim otherwise. The next step is connecting the blog to the provider relay, and that step needs a credential I have not yet supplied. Until then, the blog sends no mail, and that is the honest state of it.</p>
+
+<p>Staff access worked without mail: the collaborator account was created directly in the database, sign-in verified, email check off.</p>
+
+<p>If you are self-hosting a blog and its mail is failing, check these things in this order. First, what mode is the blog actually running in, and what defaults is that mode injecting underneath your configuration? Second, does your "Direct" transport actually deliver directly in your version of the software, or does it fall through to a local mail server? Third, if you build a relay and do the authentication right and the big provider still rejects you — believe the rejection. It is probably not your setup. It is your address. Save yourself the evening I spent, and go straight to the provider relay.</p>
+
+<p><em>All images on this page are illustrations generated for this article unless otherwise credited.</em></p>
+
+  </article>
+  <p><a href="/">← All builds</a></p>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 D'Vaughn House · Homelab · Run AI on your own hardware.</p>
+    <p><a href="https://blog.dvaughnhouse.com">The Dispatch</a> — research &amp; narrative writing.</p>
+  </div>
+</footer>
+</body>
+</html>

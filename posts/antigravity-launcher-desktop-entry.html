@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Linux has no apps folder — getting Antigravity into the launcher — Homelab</title>
+<meta name="description" content="A manually extracted tarball creates no .desktop entry, so the app is invisible to the launcher. The fix: ~/Apps, a .desktop file, and a Walker restart.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,700,800|newsreader:400,400i,500,600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">Home<span>lab</span></a></div>
+    <nav class="site">
+      <a href="/">Builds</a>
+      <a href="/about.html">About</a>
+      <a href="https://blog.dvaughnhouse.com">The Dispatch</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="post">
+    <h1>Linux has no apps folder — getting Antigravity into the launcher</h1>
+    <p class="meta">by D'Vaughn House</p>
+
+
+    <h2>The goal</h2>
+    <p>Antigravity was extracted and sitting on disk, but it was nowhere in the app launcher. On a Mac you drag it to Applications and you're done. Linux doesn't work like that — and I learned that the hard way, in real time.</p>
+
+    <h2>Hardware and cost</h2>
+    <ul>
+      <li>2017 27" iMac running Omarchy (Arch Linux)</li>
+      <li>Antigravity IDE (manually extracted tarball — Google ships it with no installer)</li>
+    </ul>
+
+    <h2>Software stack</h2>
+    <ul>
+      <li><strong>Walker</strong> — Omarchy's app launcher (opens with Super+Space)</li>
+      <li>A hand-written <code>.desktop</code> entry — the thing Linux actually uses to know an app exists</li>
+    </ul>
+
+    <h2>What broke and how it was fixed</h2>
+    <p>The root cause is simple once you see it: a manually extracted tarball creates no <code>.desktop</code> entry, and without one the launcher has no idea the app exists. There's no "apps folder" to drag things into. I asked why the app just stays wherever you extracted it instead of going somewhere proper — the answer is that Linux has no /Applications. Package installs go through pacman; a loose tarball just sits there.</p>
+    <p>My part of the comedy: when I was told to move the extracted folder with <code>mv "SRC" ~/Apps/antigravity</code>, I ran it literally — quotes, SRC and all. SRC was a placeholder for the real path. It was not a real folder. That one's on me, and it's the reason my setup notes now say placeholders should be unmistakable.</p>
+    <p>The recipe that actually worked:</p>
+    <ol>
+      <li>Move the app to <code>~/Apps/antigravity</code> (hand-installed GUI apps live in <code>~/Apps/&lt;appname&gt;</code> — my pick, no sudo needed)</li>
+      <li>Create <code>~/.local/share/applications/antigravity.desktop</code> pointing at the binary</li>
+      <li>Restart Walker with <code>omarchy-restart-walker</code> so it picks up the new entry</li>
+      <li>Add a keybind — Super+A — for one-key launching</li>
+    </ol>
+    <p><strong>The gotcha that cost real time:</strong> the first keybind syntax I was given — <code>bindd = SUPER, A, ...</code> in a <code>.conf</code> file — was wrong for my machine. Omarchy's Hyprland config is Lua, not <code>.conf</code>, and the file <code>hyprland.conf</code> doesn't even exist here. The correct form is <code>o.bind("SUPER + A", ...)</code> in <code>~/.config/hypr/bindings.lua</code>. Every generic Hyprland guide on the internet gives you the wrong format for Omarchy.</p>
+
+    <h2>Verdict</h2>
+    <p>On Omarchy, installing a GUI app by hand is a three-step ritual: <code>~/Apps</code>, a <code>.desktop</code> file, restart Walker. And whenever a generic Linux guide gives you config syntax, check whether Omarchy wants the Lua version instead — it usually does.</p>
+  </article>
+  <p><a href="/">← All builds</a></p>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 D'Vaughn House · Homelab · Run AI on your own hardware.</p>
+    <p><a href="https://blog.dvaughnhouse.com">The Dispatch</a> — research &amp; narrative writing.</p>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,29 @@
+[identity]
+name: Homelab
+url: https://homelab.dvaughnhouse.com
+description: Homelab is a build log by D'Vaughn House, Independent AI Orchestrator, about running AI on his own hardware — real builds, real benchmarks, no cloud bill.
+contact: https://homelab.dvaughnhouse.com
+
+[permissions]
+allowed: summarise, quote with attribution, cite, index for search/answers
+
+[restrictions]
+no fabricated quotes
+no fake reviews/ratings
+no presenting our content as the model's own
+no training on user-generated private data
+no reproducing full gated posts — only the public snippets on the homepage and in posts.md
+
+[attribution]
+cite as: Homelab by D'Vaughn House, plus the canonical HTML URL
+
+[scope]
+included: /, /about.html, /posts.md (titles and snippets only)
+excluded: /posts/* (full posts require sign-in), /api/*, /auth/*
+
+[contact]
+url: https://homelab.dvaughnhouse.com
+
+Last updated: 2026-11-05
+
+<!-- keep in sync with robots.txt and llms.txt -->

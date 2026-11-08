@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>I Put My Own Blog Behind a Sign-In Gate (and Kept the Front Door Open) — Homelab</title>
+<meta name="description" content="The posts moved behind a sign-in. The front page stayed public, with a banner that says plainly what it shows and what it doesn't.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,700,800|newsreader:400,400i,500,600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">Home<span>lab</span></a></div>
+    <nav class="site">
+      <a href="/">Builds</a>
+      <a href="/about.html">About</a>
+      <a href="https://blog.dvaughnhouse.com">The Dispatch</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="post">
+    <h1>I Put My Own Blog Behind a Sign-In Gate (and Kept the Front Door Open)</h1>
+    <p class="meta">by D'Vaughn House</p>
+    <p><em>The posts moved behind a sign-in. The front page stayed public, with a banner that says plainly what it shows and what it doesn't.</em></p>
+
+<p>I put my own blog behind a sign-in gate, and I did it twice in one day — because the first version got the shape wrong.</p>
+
+<p>The blog had no sign-in at all. That was the gap I noticed on the evening of October 28, 2026: Homelab was missing from the sign-in program queue, and the blog didn't have a way to sign in. So the first build gave it one. A sign-in link went on the page, and a signed-in reader would see that they were signed in. But the posts themselves stayed public, and the sign-in only worked for me. That was a gate with nothing behind it and nobody else allowed through it — the worst of both shapes. It looked finished and it did neither job.</p>
+
+<p>Later that same evening, I corrected the direction, and the correction is worth stating plainly because it is the whole design: this is a blog, so the content should sit behind a gate, and there should be a landing page in front of it. The landing page shows snippets and prompts the reader to sign up. Readers sign in to read the blog. That one sentence replaced the first build entirely. The owner-only restriction came out, and the gate went around the posts instead of around nothing.</p>
+
+<p>Here is what that means in practice, as a reader would meet it.</p>
+
+<p>The front page is still public. You can open it without signing in, see what the blog is, and read the snippets. After the opening section there is a banner, and it does not dress anything up: "Read every build in full. This page shows snippets — sign up to read the whole thing." With it is a button that says "Sign up to read." That is the front door, and it stays open. Nobody has to guess what is free to look at and what is not, because the page tells you.</p>
+
+<p>Every full post is behind the gate. Try to open one without signing in and you do not get an error page and you do not get a teaser that pretends to be the post. You are sent back to the front page, where a notice says, "Sign in to read the full post." That is honest about what happened: you were not refused, you were redirected to the place that explains the deal. Once you are signed in, the banner goes away — you have already made the choice it was asking for.</p>
+
+<p>The part that changed most from the first build is who can come through. In the first version, only I could sign in. In the version that went live that evening, any reader can. The owner-only list was taken out, so signing in is no longer a private door for the person who runs the site. It is the normal way in for anyone who wants to read a full post. The sign-in page itself offers account creation. That was checked, not assumed. The sign-up path from the landing page banner leads to a page where a new reader can actually create an account.</p>
+
+<p>Two things that were already public stayed public, and that matters because a gate has a way of quietly spreading. The About page was left alone — it still opens without signing in. The newsletter signup was left alone too. The gate covers the posts, and only the posts. If you want to know what the blog is before handing it anything, the front page and the About page still let you. The newsletter still works the way it did.</p>
+
+<p>I should also say what the gate is not. It is not a wall around the whole site. The front page is not a login screen, and a visitor is not met with a blank box demanding credentials before they can see a single word about what this place is. I did not want the shape where a site hides everything, including its own description, behind a sign-in. The front door is a page with real content on it: snippets of real posts, a plain statement of what signing up gets you, and a button. The gate starts where the full writing starts. That line is deliberate, and it is the difference between asking someone to sign in and shutting them out.</p>
+
+<p>Now the part where I stay honest about what was proven and what was not. The gate was tested from the outside, the way an unsigned visitor would meet it. An unsigned attempt to open a post was turned back to the front page with the sign-in notice, and a second post behaved the same way. The front page loaded with the banner and the sign-up button in place. The sign-in page was reached from the banner, and the sign-up option was confirmed on it. The session check that a signed-in reader depends on was proven on this same site. Each piece of the path was verified: the turn-away, the front door, the sign-up door, and the session check.</p>
+
+<p>What I had not yet watched happen, at the time this piece was written, is a reader walking the whole path in one go on the live site: signing in, opening a post, and reading it through to the end. That final, full walk-through was still outstanding. I am not going to dress up a set of passed probes as a completed journey when the last step — a real signed-in reader reading a real full post — had not yet been watched. The gate follows the same session check that was already proven, so I have good reason to believe it works, but belief is not the same as watching it happen, and this blog does not pretend otherwise.</p>
+
+<p>That is the shape of it, and I think it is a fair shape. A blog that asks you to sign in before you can read it is asking for trust, and trust starts with telling you exactly what is public, exactly what is gated, and exactly what signing in gets you. The front page tells you. The banner tells you. The notice tells you when you are turned back. Nothing about the arrangement is hidden, including the one thing that is still unproven. The door is open. The posts are behind it. And if you sign in, you can read the whole thing.</p>
+
+<p><em>All images on this page are illustrations generated for this article unless otherwise credited.</em></p>
+
+  </article>
+  <p><a href="/">← All builds</a></p>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 D'Vaughn House · Homelab · Run AI on your own hardware.</p>
+    <p><a href="https://blog.dvaughnhouse.com">The Dispatch</a> — research &amp; narrative writing.</p>
+  </div>
+</footer>
+</body>
+</html>

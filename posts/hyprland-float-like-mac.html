@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>"Can you trun the tilting off" — making Hyprland float like a Mac — Homelab</title>
+<meta name="description" content="Hyprland's tiling kept reshuffling every window. The fix: one Lua line in Omarchy's config that makes every window float, macOS-style.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,700,800|newsreader:400,400i,500,600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">Home<span>lab</span></a></div>
+    <nav class="site">
+      <a href="/">Builds</a>
+      <a href="/about.html">About</a>
+      <a href="https://blog.dvaughnhouse.com">The Dispatch</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="post">
+    <h1>"Can you trun the tilting off" — making Hyprland float like a Mac</h1>
+    <p class="meta">by D'Vaughn House</p>
+
+
+    <h2>The goal</h2>
+    <p>Hyprland's tiling was driving me up the wall. I'd resize a window exactly where I wanted it, open one more window, and the whole layout reshuffled itself. Windows stay where I put them on a Mac. I wanted that. My exact words at the time: <em>"can you trun the tilting off, its really annoying if i resize a window then oepn another window and that window i just reszied, resizes it self to fit the screen, when I literally don't want that to happen."</em></p>
+
+    <h2>Hardware and cost</h2>
+    <ul>
+      <li>2017 27" iMac running Omarchy (Arch Linux)</li>
+      <li>Hyprland 0.56.2</li>
+    </ul>
+
+    <h2>Software stack</h2>
+    <ul>
+      <li><strong>Hyprland</strong> — the Wayland compositor</li>
+      <li><strong>Omarchy</strong> — which configures Hyprland in Lua, not the usual <code>.conf</code> file</li>
+    </ul>
+
+    <h2>What broke and how it was fixed</h2>
+    <p>First surprise: <code>~/.config/hypr/hyprland.conf</code> doesn't exist on Omarchy. Generic Hyprland guides all assume it does — including the first instructions I was given, which put a <code>windowrule = float, class:.*</code> line in that file. That advice was written for a machine that wasn't mine. Omarchy uses Lua config files instead — <code>~/.config/hypr/hyprland.lua</code> and friends.</p>
+    <p>The clue was hiding in Omarchy's own defaults at <code>/usr/share/omarchy/default/hypr/apps/localsend.lua</code>, which showed the window-rule API in action:</p>
+    <pre><code>o.window("localsend", { float = true, center = true })</code></pre>
+    <p>The fix was one line appended to <code>~/.config/hypr/hyprland.lua</code> — the same rule, applied to everything:</p>
+    <pre><code>o.window(".*", { float = true, center = true })</code></pre>
+    <p>Then <code>hyprctl reload</code>, and Hyprland auto-reloads on save anyway. New windows now open centered, floating, on top — macOS-style. The tiling is gone.</p>
+    <p><strong>Where I landed:</strong> I asked for this because the reshuffling drove me nuts — then I actually learned the keybindings, and tiling started making sense. I decided against the float-by-default rule after all. The one-liner above is real and it works, but I keep tiling on now because I've learned to drive it. If you're coming from macOS and the reshuffle annoys you, the Lua line is still the escape hatch — just know you might not need it for long.</p>
+
+    <h2>Verdict</h2>
+    <p>If you're on Omarchy and the tiling life isn't for you, you don't need to fight Hyprland's config for an afternoon. One Lua line, and it floats. Just remember: Omarchy speaks Lua, not <code>.conf</code> — every generic Hyprland guide on the internet will send you to a file that doesn't exist. Me? I learned the keybindings and kept tiling — turns out it was the unfamiliarity bugging me, not the layout.</p>
+  </article>
+  <p><a href="/">← All builds</a></p>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 D'Vaughn House · Homelab · Run AI on your own hardware.</p>
+    <p><a href="https://blog.dvaughnhouse.com">The Dispatch</a> — research &amp; narrative writing.</p>
+  </div>
+</footer>
+</body>
+</html>

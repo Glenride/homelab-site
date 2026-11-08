@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What broke when I networked my Mac Studio and iMac together — Homelab</title>
+<meta name="description" content="Two machines, one network, five days of breakage — and a link that finally holds.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,700,800|newsreader:400,400i,500,600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">Home<span>lab</span></a></div>
+    <nav class="site">
+      <a href="/">Builds</a>
+      <a href="/about.html">About</a>
+      <a href="https://blog.dvaughnhouse.com">The Dispatch</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="post">
+    <h1>What broke when I networked my Mac Studio and iMac together</h1>
+    <p class="meta">by D'Vaughn House</p>
+    <p><em>Two machines, one network, five days of breakage — and a link that finally holds.</em></p>
+
+    <h2>The goal</h2>
+    <p>One machine runs the models. The other machine runs the always-on work and talks to it. The Mac Studio is the engine room; the iMac is the box that never sleeps. The earlier posts on this site left this link as a to-do. Here is the rest of the story — everything that broke between "two machines on the same network" and a link that actually works.</p>
+
+    <h2>Hardware and cost</h2>
+    <ul>
+      <li>Mac Studio, M2 Ultra, 64GB of unified memory — the model server</li>
+      <li>2017 27" iMac (iMac18,3), Omarchy / Arch Linux — the always-on homelab server</li>
+      <li>Both already owned. Operating cost is $0 a month; the only money in this build is the domain, about $12 a year.</li>
+    </ul>
+
+    <h2>Software stack</h2>
+    <ul>
+      <li><strong>LM Studio</strong> — serves models over the network through an OpenAI-compatible API</li>
+      <li><strong>Ollama 0.40.9</strong> — lightweight model runner, part of the regular rotation</li>
+      <li><strong>Tailscale 1.104.1</strong> — the private network between the machines (macOS 26.5.2 on the Studio)</li>
+      <li><strong>Tailscale Serve</strong> — exposes the Studio's model server to the tailnet only</li>
+      <li><strong>socat</strong> — a small TCP proxy on the iMac, added later as the stable route</li>
+    </ul>
+    <p>The machines on the network: the Studio at 192.168.1.187 on the LAN and 100.70.123.107 on the tailnet (mac-studio.tail22a20c.ts.net); the iMac at 192.168.1.191 on Wi-Fi, 192.168.1.148 on Ethernet, and 100.81.149.115 on the tailnet.</p>
+
+    <h2>What broke and how it was fixed</h2>
+    <p><strong>I couldn't find the Studio's IP.</strong> The first problem was embarrassingly basic — my actual question was <em>"how do i find the studio lan ip."</em> The answer: Option-click the Wi-Fi icon on the Studio, or System Settings → Wi-Fi → Details. It reported 192.168.1.187, and that went into the config.</p>
+    <p><strong>The port was wrong.</strong> I had 1234 in the config because that's LM Studio's default. The Studio said otherwise — <em>"it says 1235 not 1234."</em> So the endpoint became <code>http://192.168.1.187:1235/v1</code>, verified in my own terminal.</p>
+    <p><strong>The server was only talking to itself.</strong> Then the reachability failure: the iMac still couldn't see the server. The diagnosis was that LM Studio was bound to localhost only — serving to itself, not the network. I confirmed it at the socket level: the listener was LM Studio's server process, bound to 127.0.0.1 only. It never listened on any network interface.</p>
+    <p><strong>The setting that never took effect.</strong> The old advice was "enable Serve on local network" on the Server tab. My version has no Server tab at all — just a settings menu. One of the earlier posts on this site still says the LAN serving has to be enabled on LM Studio's Server tab; that line is stale, and this piece supersedes it — there is no Server tab in my version, and the checkbox it describes doesn't exist. The setting itself sits in Developer → Server Settings, but it never took effect for the running server: after a restart the listener came back on 127.0.0.1, and the record is that the toggle was still off in effect. My own research pointed at LM Link instead, the mesh-networking route: end-to-end encrypted, nothing public. I never set LM Link up. The working route was the command line: <code>lms server start --bind 0.0.0.0 --port 1235</code>. Even that fought me at first — the CLI command timed out waiting for the daemon while the GUI-run server kept running, bound to localhost.</p>
+    <p><strong>The firewall was a red herring.</strong> My call at the time was "it's the firewall," and it was half right. macOS Firewall was enabled with stealth mode on, which explains the symptom — connections timing out instead of refusing, system pings dying. But stealth shapes the symptom; the loopback binding was the wall. Turning the firewall off alone would not have fixed anything.</p>
+    <p><strong>The pings lied.</strong> System ping to the Studio's tailnet address returned 100% loss even while the tunnel was fine — macOS drops ICMP. The real test was Tailscale's own ping: pong via the LAN in 6ms, direct path. When a ping says a machine is dead, check with the tool that owns the network before believing it.</p>
+    <p><strong>Tailscale, then Serve.</strong> On October 20 the Studio joined the tailnet, and the first bridge that actually worked was Tailscale Serve: <code>tailscale serve --bg http://localhost:1235</code> on the Studio, which proxies the loopback-only server out to the tailnet and nowhere else. The iMac pulled the Studio's model list through it — five models, end to end. A five-day reachability saga, closed.</p>
+    <p><strong>Then the Studio went down and the whole stack moved.</strong> On October 22 the Studio went offline twice. The first time, around 13:58, it crashed under LLM memory load and came back around 15:27. The second time was a kernel panic at 20:58, and it stayed down about fourteen hours. It came back when I got to it, and I applied the pending OS updates. After the updates, LM Studio was dark while Ollama answered fine on its own port. Same machine, same network, one service up and the other down: the fault was inside LM Studio, not the network.</p>
+    <p><strong>The VPN started flapping.</strong> That same day the Tailscale VPN profile on the Studio got stuck looping "configuring and connecting," and the node kept dropping off the tailnet. The catch-22: on macOS the Tailscale VPN configuration <em>is</em> the connection — turning the VPN off disconnects the app by design. The loop stopped on its own and the node held across the next checks. The fix on record if it comes back is to quit Tailscale fully first, then remove the configuration, relaunch, and let it build a fresh one — with connect-on-demand left off.</p>
+    <p><strong>The binding came back.</strong> After the OS update, the server was loopback-bound again — the listener was back on 127.0.0.1, and a restart through the GUI recreated it the same way. The fix that stuck was the CLI, on the new port: <code>lms server start --port 1234 --bind 0.0.0.0</code>. One wrinkle: the CLI tracks its server separately from the GUI's — <code>lms server stop</code> reported "not running" while the GUI's server was still listening locally. Verified from the iMac right after: the model list answered on the LAN and the tailnet with six models, and all four chat models served real completions in 83 seconds including model load time. Note the port moved in the process: the GUI server had served on 1235; the CLI server runs on 1234, and everything downstream moved to 1234 with it.</p>
+    <p><strong>Serve died with the GUI server.</strong> That same afternoon, Tailscale Serve started returning 502 while the raw server answered fine on port 1234. Serve was still proxying the retired GUI server at localhost:1235. The fix was one command on the Studio: <code>tailscale serve --bg http://127.0.0.1:1234</code>. Verified from the iMac and the agent box — model list 200, live completion through Serve.</p>
+    <p><strong>The direct route died, so the iMac became the bridge.</strong> On October 23 the wider fleet — OpenClaw, GT, the keep-warm script — moved off the Serve address to the direct tailnet address, after Serve stayed down. The InstaBox harness followed on October 24, rewired to the direct address on my tap. That night the box-to-Studio tailnet route died anyway: packets out, nothing back, while the Studio answered the iMac over the LAN in 6ms. So I built a proxy on the iMac — a small service listening on the tailnet at 100.81.149.115:12345 and forwarding to the Studio's LAN address at 192.168.1.187:1234. The iMac has a proven direct LAN path to the Studio and the box reaches the iMac reliably, so the proxy routes around the dead leg entirely. Verified from the box: model list in 0.25 seconds, seven models, live completion. The direct route healed on its own the next morning, and I switched the harness to the proxy anyway — the direct route stays as the fallback. The steward, OpenClaw, and GT stayed on the LAN/direct path.</p>
+    <p><strong>The Studio sleeps, and nothing recovers on its own.</strong> The thread through all of this: when the Studio goes down, nothing comes back by itself. The fourteen-hour outage ended when I walked over to it. Two different failures, though. The overnight sleep that started it all was an accidentally triggered hot corner — I had one set to sleep the Studio — and I fixed that one myself on October 22, changing the hot corner from Sleep to Lock Screen. The fourteen-hour outage itself wasn't sleep at all: the panic log shows the machine never slept, it froze. The Energy setting and the pmset command are a different story — the setting was suggested on October 21, the pmset command given on October 22 and again on October 24, and there is still no confirmation either was ever applied. That part is still open. The model server died twice on October 24 — fixed the first time around 18:08 with the same CLI command, dead again by 20:28. For the second death the restart was prescribed, not confirmed run, and the port was still down at 21:48. The server was verified serving again that night by a lean model load on my tap at 22:05, with sanity completions coming back "LEAN OK".</p>
+
+    <h2>Verdict</h2>
+    <p>Networking two machines is three things: the right IP, the right port, and the server actually bound to the network instead of localhost. Check all three before you blame the model. When the software's UI changes out from under the guides, believe the software, not the guides — and when the GUI won't do what you need, the CLI will. Keep a second path: one route will die on you, usually at night, usually right after an update. And if your model server lives on a machine that sleeps, fix the sleep first, because every other fix you make will quietly unmake itself overnight.</p>
+    <p>Who should copy this: anyone with a strong machine and an old machine who wants one model server for the whole house. Run the heavy models where the memory is, run the agents where the uptime is, and don't trust a green "Connected" badge — verify with a real request from the machine that actually needs the answer.</p>
+    <p><em>All images on this page are illustrations generated for this article unless otherwise credited.</em></p>
+  </article>
+  <p><a href="/">← All builds</a></p>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 D'Vaughn House · Homelab · Run AI on your own hardware.</p>
+    <p><a href="https://blog.dvaughnhouse.com">The Dispatch</a> — research &amp; narrative writing.</p>
+  </div>
+</footer>
+</body>
+</html>

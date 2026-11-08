@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>I Deleted Google Fonts From Five Sites in One Afternoon — Homelab</title>
+<meta name="description" content="An audit found the same small leak on five of my apps. The fix was free, boring, and satisfying: download the fonts, serve them myself, and stop phoning a stranger's server on every page load.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,700,800|newsreader:400,400i,500,600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">Home<span>lab</span></a></div>
+    <nav class="site">
+      <a href="/">Builds</a>
+      <a href="/about.html">About</a>
+      <a href="https://blog.dvaughnhouse.com">The Dispatch</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="post">
+    <h1>I Deleted Google Fonts From Five Sites in One Afternoon</h1>
+    <p class="meta">by D'Vaughn House</p>
+    <p><em>An audit found the same small leak on five of my apps. The fix was free, boring, and satisfying: download the fonts, serve them myself, and stop phoning a stranger's server on every page load.</em></p>
+
+<h2>The audit finding</h2>
+
+<p>An audit I ran across seven of my public apps checked each against six checks: age gates, external fonts, session replay, marketing-email footers, subscription renewal terms, and uploads. Thirteen problems came back. Five of them were the same problem wearing different clothes: externally hosted fonts.</p>
+
+<p>One app, Pearls, was loading its fonts live from Google Fonts. Four others — ThinkTank OS, Dispatch, InspireWrite, and D'Quizz — were loading theirs from Bunny Fonts, a privacy-focused European font host. When a visitor opens a page, their browser has to fetch the font files from somebody else's server before the page can look right. That request carries the visitor's IP address with it.</p>
+
+<p>I should be fair to Bunny Fonts here, because the audit was: it is privacy-focused by design, hosted in Europe, and it does not track visitors the way an ad network would. The practical risk there is much lower than with Google. But the check as written flags any third-party font host, and the strict reading is the honest one. If the font comes from someone else's server, my visitor's browser is talking to someone else's server. The only way to end that conversation is to serve the font myself.</p>
+
+<p>The Google side of it had a sharper edge. In January 2022, a regional court in Munich ruled that embedding Google Fonts transmitted a visitor's IP address to Google without consent, and awarded the visitor 100 euros in damages: an IP address is personal data, and the site could have hosted the fonts itself. A small number, but a plain principle. A font is not worth a stranger's data.</p>
+
+<h2>Self-hosting in practice</h2>
+
+<p>Self-hosting a font is not glamorous work, and that is exactly why I liked it. Three steps, the same on every app: download the exact font files already in use — the same families, the same weights, nothing redesigned; put those files on the app itself and point the stylesheet at the local copies; delete the lines that pointed at the outside host, and verify that nothing still calls out to it.</p>
+
+<p>The point of keeping the exact weights matters more than it sounds. This was not a redesign. Nobody visiting these sites should have noticed anything change. The only difference should be invisible: the browser now gets its fonts from the same place it got the page.</p>
+
+<p>The totals tell the story of an afternoon's worth of files. Pearls took 16 font files: Fraunces, Public Sans, and IBM Plex Mono. ThinkTank OS took 16: Bricolage Grotesque and Newsreader. Dispatch took 7: Bricolage Grotesque and Newsreader again. InspireWrite took 9: DM Serif Display, Inter, and Space Grotesk. D'Quizz took 6: Instrument Sans. That is 54 font files across five apps, every one of them now served from the app itself instead of a third party's server.</p>
+
+<h2>The per-app wrinkle</h2>
+
+<p>Pearls is a static site, so its fix lived in files and a stylesheet: drop the font files into the deploy, rewrite the stylesheet to point at them, delete the three lines that called Google, and redeploy. Simple, and the easiest of the five to verify, because the whole site is just files.</p>
+
+<p>ThinkTank OS is a full app, not a static page, so its fix needed a frontend rebuild and a restart on its host before the change was real. Dropping files into the code was only half the job. I have been bitten before by a fix that sat on disk while the running process served the old version, so the restart was not an afterthought. It was the fix.</p>
+
+<p>Dispatch, the Ghost blog, was the sneakiest of the five. The font link did not live in the theme at all. It lived in the blog's code-injection setting — a head snippet stored in the blog's own database that loaded the fonts and set them as the theme fonts. The theme itself was clean. If I had only searched the theme files, I would have concluded there was nothing to fix, and I would have been wrong. The fix meant editing that database setting, with a backup taken first, adding the local font rules to the injected styles, and restarting the blog's container. The theme already had other fonts of its own in its font folder; I counted only the seven new Bricolage and Newsreader files this fix added, not the fonts that were already there.</p>
+
+<p>InspireWrite had a two-copy problem. The fix had to land in two copies of the same codebase: the copy in my workspace and the copy actually running on the host. So it was applied and committed in both places, and the live app was verified.</p>
+
+<p>D'Quizz is the honest exception, and I want to be plain about it. Its site is not live yet. The six Instrument Sans files are in the source code, the outside links are deleted, and a source-wide check finds no remaining references to the outside font host — but there is no live site to verify against. That fix is real but unproven in production; it gets its live check at launch.</p>
+
+<h2>The check: how to prove your pages phone nobody</h2>
+
+<p>The fix is not done when the links are deleted. It is done when the live pages prove it. Load the live page and look at what it actually asks for. There should be zero references to the outside font hosts anywhere in what the page loads — not in the page itself, not in its stylesheets, not hiding in a settings snippet like the Dispatch one was. Then load the font files themselves directly and confirm they answer successfully from the app's own domain. A font file that 404s is not self-hosted; it is a broken page wearing a self-hosted label.</p>
+
+<p>Every live app passed that check: the pages loaded cleanly, and the font files answered from the apps themselves. The four live apps now phone nobody for fonts. The fifth gets the same check the day it goes live.</p>
+
+<p>That is the whole job, and it cost nothing. Fifty-four files, five apps, one afternoon, and five fewer reasons for a stranger's server to learn that someone visited my sites. Eight other audit problems are still waiting, so this afternoon did not close the book. But the font chapter is closed, the way the best homelab work closes: the pages look exactly the same, and the network traffic tells a quieter story.</p>
+
+<p><em>All images on this page are illustrations generated for this article unless otherwise credited.</em></p>
+
+  </article>
+  <p><a href="/">← All builds</a></p>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 D'Vaughn House · Homelab · Run AI on your own hardware.</p>
+    <p><a href="https://blog.dvaughnhouse.com">The Dispatch</a> — research &amp; narrative writing.</p>
+  </div>
+</footer>
+</body>
+</html>

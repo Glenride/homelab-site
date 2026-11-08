@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Homelab — by D'Vaughn House</title>
+<meta name="description" content="Run AI on your own hardware. Real builds, real benchmarks, no cloud bill. By D'Vaughn House.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,700,800|newsreader:400,400i,500,600&display=swap" rel="stylesheet">
+<meta name="ai-summary" content="Homelab is D'Vaughn House's build log for running AI on his own hardware: a Mac Studio serving local models and a 2017 iMac as a 24/7 server. The homepage lists 20 builds as public snippets; full posts require sign-in.">
+<link rel="alternate" type="text/markdown" href="/index.md">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[{"@type":"Organization","name":"Homelab","url":"https://homelab.dvaughnhouse.com/","description":"Homelab is a build log by D'Vaughn House, Independent AI Orchestrator, about running AI on his own hardware.","founder":{"@type":"Person","name":"D'Vaughn House","jobTitle":"Independent AI Orchestrator"}},{"@type":"WebSite","name":"Homelab","url":"https://homelab.dvaughnhouse.com/","description":"Run AI on your own hardware. Real builds, real benchmarks, no cloud bill."}]}
+</script>
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">Home<span>lab</span></a></div>
+    <nav class="site">
+      <a href="/">Builds</a>
+      <a href="/about.html">About</a>
+      <a href="https://blog.dvaughnhouse.com">The Dispatch</a>
+      <a href="/auth/login" id="authLogin">Sign in</a>
+      <span id="authSigned" class="auth-signed" hidden>Signed in · <a href="/auth/logout">Sign out</a></span>
+    </nav>
+  </div>
+</header>
+<p id="authError" class="auth-error" hidden></p>
+<p id="authRequired" class="auth-error" hidden>Sign in to read the full post.</p>
+
+<div class="wrap">
+  <div class="hero">
+    <h1>Run AI on <em>your own</em> hardware.</h1>
+    <p class="sub">Real builds, real benchmarks, no cloud bill.</p>
+    <p class="byline">by D'Vaughn House · Cincinnati, Ohio</p>
+  </div>
+
+  <div class="signup-banner" id="signupBanner">
+    <p><strong>Read every build in full.</strong> This page shows snippets — sign up to read the whole thing.</p>
+    <p><a class="signup-btn" href="/auth/login">Sign up to read</a></p>
+  </div>
+
+  <section class="block">
+    <h2 class="sec">Latest builds</h2>
+
+    <div class="post-card">
+      <h3><a href="/posts/sign-in-button-looped-forever.html">The Sign-In Button That Looped Forever (and the Header That Proved Why)</a></h3>
+      <p>I clicked the button, and nothing happened. The button wasn't broken. My test was.</p>
+    </div>
+
+    <div class="post-card">
+      <h3><a href="/posts/git-said-no-identical-file.html">Git Said No to a File That Was Already Identical</a></h3>
+      <p>A version-control tool refused a change on the grounds that local work would be lost — and the file it was protecting was already identical. The fix was to stop arguing with the tool.</p>
+    </div>
+
+    <div class="post-card">
+      <h3><a href="/posts/never-leave-a-page-blank.html">Never Leave a Page Blank: The 164-Byte Stub That Looked Like an Outage</a></h3>
+      <p>The Workshop's front page looked broken. The sign-in behind it was fine. The page itself was the defect — and fixing the file wasn't enough, because a second server was still serving the old one.</p>
+    </div>
+
+    <div class="post-card">
+      <h3><a href="/posts/blog-behind-sign-in-gate.html">I Put My Own Blog Behind a Sign-In Gate (and Kept the Front Door Open)</a></h3>
+      <p>The posts moved behind a sign-in. The front page stayed public, with a banner that says plainly what it shows and what it doesn't.</p>
+    </div>
+
+    <div class="post-card">
+      <h3><a href="/posts/deleted-google-fonts-from-five-sites.html">I Deleted Google Fonts From Five Sites in One Afternoon</a></h3>
+      <p>An audit found the same small leak on five of my apps. The fix was free, boring, and satisfying: download the fonts, serve them myself, and stop phoning a stranger's server on every page load.</p>
+    </div>
+
+    <div class="post-card">
+      <h3><a href="/posts/moving-a-live-worker-between-machines.html">Moving a Live Worker Between Machines Without Dropping the Queue</a></h3>
+      <p>One queue, one worker, one move — and the watchers came along too.</p>
+    </div>
+
+    <div class="post-card">
+      <h3><a href="/posts/ai-server-was-up-nobody-could-reach-it.html">My AI Server Was Up and Nobody Could Reach It</a></h3>
+      <p>The models were running, the machine was on, and every other machine in the house got nothing. The fault was never the models. It was where the server was listening, and then where the remote-access name was pointing.</p>
+    </div>
+
+    <div class="post-card">
+      <h3><a href="/posts/why-gmail-rejects-homelab-mail.html">Why Gmail Rejects Mail From Your Homelab (and the Relay That Fixed Mine)</a></h3>
+      <p>One evening, one failed invite, and the lesson that a home connection is not a mail server — no matter how correct your setup is.</p>
+    </div>
+
+    <div class="post-card">
+      <h3><a href="/posts/the-tunnel-had-two-ends.html">The Tunnel Had Two Ends: Hunting a Ghost That Only 404'd Half the Time</a></h3>
+      <p>I fixed this exact bug once. It came back anyway — because stopping a service is not the same as killing it.</p>
+    </div>
+
+    <div class="post-card">
+      <h3><a href="/posts/docker-on-the-imac-whats-running-and-why.html">Docker on the iMac: what's running and why</a></h3>
+      <p>One old desktop, now the always-on box for the whole operation — here's everything actually running on it in Docker, and what's still missing from the picture.</p>
+    </div>
+
+    <div class="post-card">
+      <h3><a href="/posts/cloudflare-tunnel-no-port-forwarding.html">Cloudflare Tunnel: exposing homelab services with no port forwarding</a></h3>
+      <p>How I put my homelab on the public internet — real domains, real HTTPS — without opening a single port on my router.</p>
+    </div>
+
+    <div class="post-card">
+      <h3><a href="/posts/networking-mac-studio-and-imac.html">What broke when I networked my Mac Studio and iMac together</a></h3>
+      <p>Two machines, one network, five days of breakage — and a link that finally holds.</p>
+    </div>
+
+    <div class="post-card">
+      <h3><a href="/posts/mac-studio-model-serving.html">Serving local AI models over my home network</a></h3>
+      <p>A Mac Studio M2 Ultra with 64GB of unified memory, serving open-source models to every machine in the house through an OpenAI-compatible API.</p>
+    </div>
+
+    <div class="post-card">
+      <h3><a href="/posts/imac-homelab-server.html">Turning a 2017 iMac into a 24/7 homelab server</a></h3>
+      <p>One aging all-in-one, Arch Linux, and a reverse proxy — the always-on box that runs the whole operation.</p>
+    </div>
+
+    <div class="post-card">
+      <h3><a href="/posts/local-ai-stack.html">My local AI stack, and why I run my own infrastructure</a></h3>
+      <p>Ollama, Open WebUI, Stable Diffusion — the tools on the shelf, and the real reason the cloud doesn't get my work.</p>
+    </div>
+
+    <div class="post-card">
+      <h3><a href="/posts/omarchy-install-sd-card.html">The Omarchy install died halfway — blame the SD card, not the hardware</a></h3>
+      <p>An install that failed at 5.8GB with bad package reads — and the real culprit was the install medium, not the RAM.</p>
+    </div>
+
+    <div class="post-card">
+      <h3><a href="/posts/hyprland-float-like-mac.html">"Can you trun the tilting off" — making Hyprland float like a Mac</a></h3>
+      <p>One Lua line in Omarchy's config that kills tiling and makes every window float, centered, macOS-style.</p>
+    </div>
+
+    <div class="post-card">
+      <h3><a href="/posts/wifi-driver-unplugged-ethernet.html">I installed the wrong WiFi driver, then "broke" Ethernet by unplugging it</a></h3>
+      <p>The BCM43602 needs brcmfmac, not broadcom-wl. And the Ethernet that vanished? Unplugged by hand.</p>
+    </div>
+
+    <div class="post-card">
+      <h3><a href="/posts/imac-sound-cs8409.html">No sound on a 2017 iMac running Linux is a known quirk, not a dead machine</a></h3>
+      <p>The Cirrus Logic CS8409 codec isn't driven by stock drivers — diagnose first, then reach for the community fix.</p>
+    </div>
+
+    <div class="post-card">
+      <h3><a href="/posts/antigravity-launcher-desktop-entry.html">Linux has no apps folder — getting Antigravity into the launcher</a></h3>
+      <p>A hand-extracted tarball creates no .desktop entry. The fix: ~/Apps, a .desktop file, and a Walker restart.</p>
+    </div>
+
+    <div class="post-card">
+      <h3><a href="/posts/wrangler-disappearing-vm-restart.html">wrangler kept disappearing after VM restarts</a></h3>
+      <p>System-wide npm globals get wiped on VM replacement. Install to ~/workspace/.npm-global and keep it on PATH.</p>
+    </div>
+
+    <div class="post-card">
+      <h3><a href="/posts/imac-webcam-facetimehd.html">The iMac webcam works on Linux</a></h3>
+      <p>The FaceTime HD camera just needed its firmware — one package, and /dev/video* came alive.</p>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="newsletter" id="newsletter">
+      <h2>The Homelab Dispatch</h2>
+      <p>One email a week: the newest builds, one benchmark, one config worth copying. No spam, no fluff.</p>
+      <form class="subscribe" id="subscribe-form" action="javascript:void(0)">
+        <input type="email" name="email" placeholder="you@example.com" required aria-label="Email address">
+        <input type="text" name="company" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <button type="submit">Subscribe</button>
+      </form>
+      <p class="privacy">Your address is only used for this newsletter. One email a week, unsubscribe anytime.</p>
+      <p class="form-msg" id="form-msg" role="status"></p>
+    </div>
+  </section>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 D'Vaughn House · Homelab · Run AI on your own hardware.</p>
+    <p><a href="/index.md">View as Markdown</a></p>
+    <p><a href="https://blog.dvaughnhouse.com">The Dispatch</a> — research &amp; narrative writing.</p>
+    <p>The house store: <a href="https://den.dvaughnhouse.com">Reynard's — the Den</a>. Field guides and gear for your time away from the desk.</p>
+  </div>
+</footer>
+
+<script>
+document.getElementById('subscribe-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('form-msg');
+  const form = e.target;
+  const email = form.email.value.trim();
+  if (form.company.value) { msg.textContent = ''; return; } // honeypot
+  msg.className = 'form-msg';
+  msg.textContent = 'Subscribing…';
+  try {
+    const res = await fetch('/api/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      msg.className = 'form-msg ok';
+      msg.textContent = "You're in. First dispatch lands soon.";
+      form.reset();
+    } else if (data.error === 'not-configured') {
+      msg.className = 'form-msg err';
+      msg.textContent = 'Signup is being wired up — check back soon.';
+    } else {
+      msg.className = 'form-msg err';
+      msg.textContent = 'That email doesn\u2019t look right — try again.';
+    }
+  } catch (err) {
+    msg.className = 'form-msg err';
+    msg.textContent = 'Something went wrong — try again in a bit.';
+  }
+});
+</script>
+<script>
+/* ===== Sign-in state (WorkOS, live 2026-10-28): shows Signed in + Sign out when a session exists ===== */
+(function(){
+  "use strict";
+  var TEXT = {
+    workos_rejected: "The sign-in was declined. Try again.",
+    invalid_state: "The sign-in expired before it finished. Try again.",
+    not_owner: "That account isn't on the owner list. Sign in with dvaughnhouse@gmail.com.",
+    workos_unreachable: "The sign-in service couldn't be reached. Try again.",
+    not_configured: "Sign-in isn't configured right now. Try again in a bit."
+  };
+  var login = document.getElementById("authLogin");
+  var signed = document.getElementById("authSigned");
+  var err = document.getElementById("authError");
+  var req = document.getElementById("authRequired");
+  var banner = document.getElementById("signupBanner");
+  var m = window.location.hash.match(/^#auth_error=([^&]+)/);
+  if (m) {
+    var msg = TEXT[decodeURIComponent(m[1])];
+    if (msg && err) { err.textContent = msg; err.hidden = false; }
+    window.history.replaceState(null, "", window.location.pathname + window.location.search);
+  } else if (window.location.hash === "#auth_required") {
+    if (req) req.hidden = false;
+    window.history.replaceState(null, "", window.location.pathname + window.location.search);
+  }
+  fetch("/api/me").then(function(r){ return r.ok ? r.json() : null; }).then(function(d){
+    if (d && d.email && login && signed) {
+      login.hidden = true;
+      signed.hidden = false;
+      if (banner) banner.hidden = true;
+    }
+  }).catch(function(){});
+})();
+</script>
+</body>
+</html>

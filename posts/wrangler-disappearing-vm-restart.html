@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>wrangler kept disappearing after VM restarts — Homelab</title>
+<meta name="description" content="System-wide npm global installs get wiped on VM replacement, silently breaking deploys. The fix: install to ~/workspace/.npm-global and keep it on PATH.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,700,800|newsreader:400,400i,500,600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">Home<span>lab</span></a></div>
+    <nav class="site">
+      <a href="/">Builds</a>
+      <a href="/about.html">About</a>
+      <a href="https://blog.dvaughnhouse.com">The Dispatch</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="post">
+    <h1>wrangler kept disappearing after VM restarts</h1>
+    <p class="meta">by D'Vaughn House</p>
+
+
+    <h2>The goal</h2>
+    <p>Deploy sites to Cloudflare Pages with wrangler. It worked. Then the VM restarted. Then wrangler was gone, and deploys failed with <code>FileNotFoundError: 'wrangler'</code> — with zero warning that the tool itself had vanished. The error looked like a code problem. It was not a code problem.</p>
+
+    <h2>Hardware and cost</h2>
+    <ul>
+      <li>A cloud VM that gets replaced periodically (home directory persists; system paths don't)</li>
+    </ul>
+
+    <h2>Software stack</h2>
+    <ul>
+      <li><strong>npm</strong> with a custom global prefix</li>
+      <li><strong>wrangler</strong> — Cloudflare's CLI (same treatment for the <code>cf</code> CLI: it lives in <code>~/workspace/.npm-global</code> too, for the same reason)</li>
+    </ul>
+
+    <h2>What broke and how it was fixed</h2>
+    <p>The failure mode was sneaky: <code>npm install -g wrangler</code> puts the binary in the system-wide npm global directory, which lives outside the home directory. When the VM gets replaced, everything outside <code>~</code> is wiped — so wrangler silently disappeared, and the next deploy died with a <code>FileNotFoundError</code> that sent me looking at my code instead of my toolbox.</p>
+    <p>The fix:</p>
+    <pre><code>npm install -g --prefix ~/workspace/.npm-global wrangler</code></pre>
+    <p>…and make sure <code>~/workspace/.npm-global/bin</code> is on PATH (via <code>~/.bashrc</code>). Now the tool lives under the home directory, which survives VM replacements. This one is now a standing rule in my workspace notes, learned the expensive way: VM replacements wipe the system-wide npm install, and they do it silently.</p>
+    <p><strong>The lesson:</strong> keep durable tools under the home directory, never in system paths. Anything outside <code>~</code> is a rental — the landlord can bulldoze it on restart.</p>
+
+    <h2>Verdict</h2>
+    <p>If your deploys mysteriously break after infrastructure restarts, check whether your CLI tools actually still exist before debugging your code. And on any ephemeral VM, install globals with a <code>--prefix</code> under home from day one.</p>
+  </article>
+  <p><a href="/">← All builds</a></p>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 D'Vaughn House · Homelab · Run AI on your own hardware.</p>
+    <p><a href="https://blog.dvaughnhouse.com">The Dispatch</a> — research &amp; narrative writing.</p>
+  </div>
+</footer>
+</body>
+</html>

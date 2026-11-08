@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My AI Server Was Up and Nobody Could Reach It — Homelab</title>
+<meta name="description" content="The models were running, the machine was on, and every other machine in the house got nothing. The fault was never the models. It was where the server was listening, and then where the remote-access name was pointing.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,700,800|newsreader:400,400i,500,600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">Home<span>lab</span></a></div>
+    <nav class="site">
+      <a href="/">Builds</a>
+      <a href="/about.html">About</a>
+      <a href="https://blog.dvaughnhouse.com">The Dispatch</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="post">
+    <h1>My AI Server Was Up and Nobody Could Reach It</h1>
+    <p class="meta">by D'Vaughn House</p>
+    <p><em>The models were running, the machine was on, and every other machine in the house got nothing. The fault was never the models. It was where the server was listening, and then where the remote-access name was pointing.</em></p>
+
+<h2>The symptom that lied</h2>
+
+<p>One machine in my house runs the models. The workstation is the engine room, the heavy machine with the memory. Everything else talks to it — the second machine that runs the always-on work, and a third machine that runs jobs through the night. When it breaks, everything that depends on it breaks at once.</p>
+
+<p>That is what happened after an operating-system update and a reboot. The workstation was up. The model server was up. From the workstation itself, the models answered. From every other machine, the requests timed out.</p>
+
+<p>A timeout tells you almost nothing: a refusal says the door is closed, a timeout only says the answer never came back. My first instinct was the firewall. That instinct was wrong, and it cost me time checking a gate that was never the wall.</p>
+
+<p>The clue I should have weighted more: another service on the very same workstation answered fine from the other machines. Same machine, same network, one service up and the other down. The network path was good. The fault was inside the model server — in how it was listening, not whether it was running.</p>
+
+<h2>Binding first</h2>
+
+<p>A server can listen only to itself, on loopback — invisible to the rest of the house — or on all interfaces, so any machine on the network can reach it. From the workstation, both look identical: the models answer and the logs look healthy. From the second machine, the difference is everything.</p>
+
+<p>That was the whole fault. After the update, the model server came back bound to loopback only. It was serving to itself, not to the network. Every remote probe timed out while the local checks passed, because the local checks never left the machine.</p>
+
+<p>Tell the two apart by looking at the listener itself, on the workstation, before you touch the firewall or the router. Loopback only means the server is talking to itself; all interfaces means the network can reach it. That one readout separates a binding problem from a firewall problem.</p>
+
+<p>The fix, once I knew what I was looking at, was one terminal command on the workstation: start the command-line server bound to all interfaces. There was one wrinkle worth knowing. The server's own stop command had reported that nothing was running, while the graphical server was listening locally. The graphical server and the command-line server are tracked separately, so one can tell you it is stopped while the other is still holding the local listener. Believe the listener readout, not the status message.</p>
+
+<p>Once the network-bound server was up, the model list answered from the second machine over the local network and the remote-access network alike, with all six models present. Then the real proof: all four chat models served real completions, one after another, with no refusals and no crash. A completion, requested from the machine that needs the answer, is proof.</p>
+
+<h2>The remote-access trap</h2>
+
+<p>Fixed, I thought. Not for everyone.</p>
+
+<p>The remote-access name kept failing even after the server was reachable directly. Same models, same workstation, same network, and the pretty route returned errors while the direct route answered fine. The remote-access name was still pointing at the old server.</p>
+
+<p>The remote-access service is a proxy: it takes requests under one name and forwards them to a backend address on the workstation. When the command-line server took over, the old graphical server retired — but nobody had told the proxy. Its backend pointed at the retired server, so every request through the remote-access name went to a server that was no longer serving. The direct route worked because it never went through the proxy. The proxy was not broken; it was faithfully forwarding to the wrong place.</p>
+
+<p>After any server change, check what the proxy points at: a proxy does not follow a server on its own, and it will keep pointing wherever it was last told, long after that server has retired. The fix was one command on the workstation, repointing the remote-access backend at the new server, and the name came back to life — model list and live completion, verified from the second machine and the third. The fleet then ran on the direct route.</p>
+
+<h2>The third path</h2>
+
+<p>The direct route died twice. The pattern was familiar by then: the workstation answered the second machine over the local network in milliseconds, while the third machine's requests to the workstation went out and nothing came back. The machine was up and the server was up, but one leg of the journey was dead — the leg the third machine depended on.</p>
+
+<p>So I stopped trying to heal that leg and routed around it. The second machine already had a proven, fast path to the workstation over the local network, and the third machine could reach the second machine reliably. I built a small TCP proxy on the second machine: it listens on the remote-access network and forwards everything to the workstation over the local network. No new server, no change to the workstation — just a bridge where both sides could already reach it.</p>
+
+<p>It was verified end to end from the third machine before anything was switched to it: the model list came back with all seven models, and a live completion came back through the proxy. The switch was held overnight instead. The direct route healed on its own the next morning, and only then was the always-on work switched to the proxy anyway, for stability. The direct route remains the fallback. The route actually carrying the work is the boring one in the middle, because it is the one that has not died on me.</p>
+
+<p>That is the lesson, twice over. A server that only talks to itself looks healthy from its own chair and dead from everywhere else — check the binding before you blame the firewall. A proxy that points at a retired server looks like an outage and is a stale pointer — check the backend after every server change. And when a route dies on you twice, stop nursing it: build the path from legs you have already proven, verify it with a real request from the machine that needs it, and keep the direct route as the fallback.</p>
+
+<p><em>All images on this page are illustrations generated for this article unless otherwise credited.</em></p>
+
+  </article>
+  <p><a href="/">← All builds</a></p>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 D'Vaughn House · Homelab · Run AI on your own hardware.</p>
+    <p><a href="https://blog.dvaughnhouse.com">The Dispatch</a> — research &amp; narrative writing.</p>
+  </div>
+</footer>
+</body>
+</html>

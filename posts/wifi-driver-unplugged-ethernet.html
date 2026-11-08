@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>I installed the wrong WiFi driver, then "broke" Ethernet by unplugging it — Homelab</title>
+<meta name="description" content="The iMac's BCM43602 needs brcmfmac, not broadcom-wl. And the Ethernet that vanished? I unplugged it myself.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,700,800|newsreader:400,400i,500,600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">Home<span>lab</span></a></div>
+    <nav class="site">
+      <a href="/">Builds</a>
+      <a href="/about.html">About</a>
+      <a href="https://blog.dvaughnhouse.com">The Dispatch</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="post">
+    <h1>I installed the wrong WiFi driver, then "broke" Ethernet by unplugging it</h1>
+    <p class="meta">by D'Vaughn House</p>
+
+
+    <h2>The goal</h2>
+    <p>Get WiFi working on the 2017 iMac under Arch Linux. Broadcom chip, Linux, WiFi — you already know this story is going to hurt. And then it hurt in a way I didn't see coming.</p>
+
+    <h2>Hardware and cost</h2>
+    <ul>
+      <li>2017 27" iMac with Broadcom BCM43602 WiFi</li>
+    </ul>
+
+    <h2>Software stack</h2>
+    <ul>
+      <li><strong>Arch Linux</strong> (Omarchy)</li>
+      <li><strong>brcmfmac</strong> — the in-kernel driver that actually supports the BCM43602</li>
+    </ul>
+
+    <h2>What broke and how it was fixed</h2>
+    <p>The BCM43602 uses the in-kernel <strong>brcmfmac</strong> driver. Not <code>broadcom-wl</code>. I was caught mid-install of <code>broadcom-wl-dkms</code> — the wrong driver, the one every outdated forum post still recommends.</p>
+    <p>Fix was simple: <code>pacman -R broadcom-wl-dkms</code> to remove it, confirm no blacklist was left behind, and the wireless interface <code>wlp3s0</code> came up on its own with the right driver — joined the network at 192.168.1.191.</p>
+    <p>And then the second act of the tragedy: Ethernet "vanished" with a NO-CARRIER status. Cue ten minutes of driver suspicion — before discovering that I had accidentally unplugged the Ethernet cable myself while reaching around the back for the router's WiFi password. The network wasn't broken. My hands were. (Ethernet came back at 192.168.1.148, cable firmly reseated.)</p>
+
+    <h2>Verdict</h2>
+    <p>Two lessons, one post: check which driver your specific Broadcom chip actually needs before installing anything (BCM43602 = brcmfmac, in-kernel, no DKMS required), and when the link goes down, check the cable before the kernel. Especially when you've been reaching behind the machine.</p>
+  </article>
+  <p><a href="/">← All builds</a></p>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 D'Vaughn House · Homelab · Run AI on your own hardware.</p>
+    <p><a href="https://blog.dvaughnhouse.com">The Dispatch</a> — research &amp; narrative writing.</p>
+  </div>
+</footer>
+</body>
+</html>

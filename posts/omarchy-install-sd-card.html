@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Omarchy install died halfway — blame the SD card, not the hardware — Homelab</title>
+<meta name="description" content="A 2017 iMac, an Omarchy install that failed at 5.8GB with bad package reads, and the real culprit: the install medium.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,700,800|newsreader:400,400i,500,600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">Home<span>lab</span></a></div>
+    <nav class="site">
+      <a href="/">Builds</a>
+      <a href="/about.html">About</a>
+      <a href="https://blog.dvaughnhouse.com">The Dispatch</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="post">
+    <h1>The Omarchy install died halfway — blame the SD card, not the hardware</h1>
+    <p class="meta">by D'Vaughn House</p>
+
+
+    <h2>The goal</h2>
+    <p>Get Omarchy (Arch-based) installed on a 2017 27" iMac to turn it into the always-on homelab server. Simple enough — or so it seemed.</p>
+
+    <h2>Hardware and cost</h2>
+    <ul>
+      <li>27" iMac (2017)</li>
+      <li>SanDisk Extreme Pro SD card in a USB adapter as install media</li>
+      <li>Spare SD card from my Zoom recorder (the backup plan)</li>
+    </ul>
+
+    <h2>Software stack</h2>
+    <ul>
+      <li><strong>Omarchy</strong> — the Arch-based distro being installed</li>
+    </ul>
+
+    <h2>What broke and how it was fixed</h2>
+    <p>It started with an earlier attempt that died uglier: I tried writing the Arch ISO as a raw disk image onto an NVMe partition and the boot failed with a bad-superblock error — the medium was unreadable before anything ever loaded. Then the Omarchy installer "crapped out" about 5.8GB in with bad package reads, and the iMac was stuck in a boot screen — macOS gone, nearly the entire OS installed, and the Limine bootloader showing blank entries with "Boot protocol not specified for this entry."</p>
+    <p>The first theory was a corrupt ISO download. Wrong. The real discovery: the SanDisk Extreme Pro SD card itself — sitting in a USB adapter — was dead — "unreadable by the computer" on <em>both</em> of my Macs. I thought it was a file type issue at first. It wasn't. The card was gone.</p>
+    <p>The backup plan was the SD card in my Zoom recorder. In my own words at the time: <em>"I have another card I can use that I use for my zoom recorder. if that one breaks I am fucked."</em> It didn't break. The recordings got copied to the Mac Studio first, then the card got reflashed with Omarchy.</p>
+    <p>Two more hurdles on the way: the failed install had written its bootloader to the internal drive, so the firmware kept booting straight to the dead entry instead of scanning for the SD card — an NVRAM reset (Option+Command+P+R) forced a fresh scan. And I had no USB drive at all ("I don't know where it is"), so the whole recovery ran through SD cards.</p>
+    <p><strong>The lesson:</strong> when an installer dies mid-read, suspect the medium before the machine — and when a card dies on two different computers, it's the card. The cheapest, dumbest part of the chain is usually the guilty one.</p>
+
+    <h2>Verdict</h2>
+    <p>If your Linux install dies mid-flight with read errors, suspect the install media first. Five minutes reflashing a drive beats an hour of RAM surgery. Every time.</p>
+  </article>
+  <p><a href="/">← All builds</a></p>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 D'Vaughn House · Homelab · Run AI on your own hardware.</p>
+    <p><a href="https://blog.dvaughnhouse.com">The Dispatch</a> — research &amp; narrative writing.</p>
+  </div>
+</footer>
+</body>
+</html>

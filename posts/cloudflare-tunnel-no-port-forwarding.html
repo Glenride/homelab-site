@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cloudflare Tunnel: exposing homelab services with no port forwarding — Homelab</title>
+<meta name="description" content="How I put my homelab on the public internet — real domains, real HTTPS — without opening a single port on my router.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,700,800|newsreader:400,400i,500,600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">Home<span>lab</span></a></div>
+    <nav class="site">
+      <a href="/">Builds</a>
+      <a href="/about.html">About</a>
+      <a href="https://blog.dvaughnhouse.com">The Dispatch</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="post">
+    <h1>Cloudflare Tunnel: exposing homelab services with no port forwarding</h1>
+    <p class="meta">by D'Vaughn House</p>
+    <p><em>How I put my homelab on the public internet — real domains, real HTTPS — without opening a single port on my router.</em></p>
+
+    <h2>The goal</h2>
+    <p>Put the services running on my iMac on the public internet — real domain names, real HTTPS — without opening a single port on my router. No port forwarding, no dynamic-DNS workaround, nothing listening on the public internet from my house.</p>
+
+    <h2>What you need before you start</h2>
+    <p>This only works if the boring parts are already true:</p>
+    <ul>
+      <li><strong>An always-on machine.</strong> Mine is a 2017 iMac running Arch Linux. It has to stay awake 24/7 with Docker running. Letting the display sleep is fine. Letting the system sleep takes everything offline — I learned that the hard way, below.</li>
+      <li><strong>Services already running in Docker.</strong> The tunnel doesn't run your apps. It just points at them. Mine are a Laravel app, a store, a quiz app, a password vault, and a Ghost blog, all in containers on the iMac.</li>
+      <li><strong>A domain whose zone lives in your Cloudflare account.</strong> All three of my domains sit under the same Cloudflare login. A tunnel can only serve hostnames from zones in the same account — I found that out trying to point a domain at the landing page that wasn't in the account at all. It can't be wired until the zone exists.</li>
+      <li><strong>The connector running on the machine.</strong> The tunnel is two halves: the thing in Cloudflare's dashboard, and a small connector process on your box that dials out to Cloudflare. No connector, no traffic. The tunnel I created sat inactive until the iMac ran its connector.</li>
+    </ul>
+
+    <h2>How I set it up</h2>
+    <p>Here's the order it actually happened, in October 2026. I'm telling you what I did, not writing you a copy-paste install manual — the exact install commands and config file for the connector aren't in my notes, and I'm not going to invent them here.</p>
+    <p><strong>1. I created a tunnel called imac-homelab.</strong> October 9, 2026. It was created through Cloudflare's API and it's remotely managed, meaning its routing rules live in the Cloudflare dashboard, not in a config file on my machine. At creation it was inactive — no connector was running yet, so it served nothing.</p>
+    <p><strong>2. I ran the connector on the iMac.</strong> The connector runs as a service inside the same Docker Compose stack as the apps it serves. Its credential lives on the iMac with locked-down permissions. Once it was up, it reported healthy with four outbound connections, and all six services in the stack were up alongside it: the connector, the web server, the app, the background worker, the database, and the cache.</p>
+    <p><strong>3. I added the first public hostname in the dashboard.</strong> The main site's hostname went in through the dashboard — Zero Trust, then Tunnels, then the tunnel's public hostnames — because the tunnel-configuration API refused token auth. Later hostnames show up in the record only as remotely-managed config-version changes, with no mechanism recorded for how each one was added, so I'm not going to claim they all went in the same way.</p>
+    <p><strong>4. I pointed DNS at the tunnel.</strong> Each hostname gets a DNS record pointing at the tunnel's address, proxied through Cloudflare. That's the whole DNS story. No A record pointing at my house, no public IP anywhere. My home IP never appears in DNS. One wrinkle from the same day: the API token I had then couldn't write DNS records — it got a 403 on dns_records — so the DNS side wasn't an API job either.</p>
+    <p><strong>5. I verified from the outside.</strong> The real test is a request from somewhere that isn't my house. After the connector came up and the hostnames were added, the main site answered 200, the SOP section (/sops) answered 200, and the store redirected to its storefront and answered 200. That's when it was actually live — not when the tunnel was created, not when the connector started, when the outside check came back clean.</p>
+
+    <h2>How the connection actually works</h2>
+    <p>The connector on my iMac dials out to Cloudflare and holds the connection open. Traffic comes in through Cloudflare, down that outbound connection, to the service. Nothing on my router is open. There's no port forward to forget about, no firewall rule to maintain, and no public IP to leak. The tunnel is the only way in, and it only exists because my machine reaches out first.</p>
+
+    <h2>What it exposes now</h2>
+    <p>This is the inventory as of the last full tunnel check, Oct 24, 2026 — the tunnel map from that night. Live checks in the record disagree across dates after that, so this is the last complete picture, not a live claim about today. As of that map, the main tunnel carried six hostnames, each one rule pointing at one local service:</p>
+    <ul>
+      <li><strong>dvaughnhouse.org</strong> — the main site and library, served by the web container.</li>
+      <li><strong>store.dvaughnhouse.com</strong> — the store, same app, told apart by domain name.</li>
+      <li><strong>inspirewrite.online</strong> — the InspireWrite Bible app, pointing at the Bible app container.</li>
+      <li><strong>app.dvaughnhouse.com</strong> — the quiz app, added later as its own rule pointing at the quiz container.</li>
+      <li><strong>workshop.dvaughnhouse.com</strong> — the workshop dashboard, pointing at its own container.</li>
+      <li><strong>vault.dvaughnhouse.com</strong> — the password vault, pointing at the vault container on the iMac's local network address.</li>
+      <li><strong>blog.dvaughnhouse.com</strong> — the Ghost blog. This one runs on a separate tunnel, not the main one, because the blog started life on a different machine and moved to the iMac later. That second tunnel also carries Grand Central, the dashboard app that lives on the same host-networked setup as the blog.</li>
+    </ul>
+    <p>Adding a service means adding one rule and one DNS record. Nothing else changes. That's the part that scales.</p>
+
+    <h2>What broke and how it was fixed</h2>
+    <p><strong>The morning everything 502'd and the tunnel was fine.</strong> One morning the sites went down with 502s. The tunnel was perfectly healthy — eight active connections, routing both hostnames correctly. The problem was the iMac itself: I'd closed Docker, or the machine had slept. The tunnel was fine; there was just nobody home behind it. The fix was bringing the stack back up, and the rule going forward: the iMac stays awake 24/7 with Docker running. When the sites 502, check the box before the tunnel. The tunnel is never the problem. The box is.</p>
+    <p><strong>The orphan container that stole traffic.</strong> A few days later the sites went down again, intermittently. This time the cause was a stray container left over from an earlier tunnel test, running on the wrong Docker network. It was still holding active connections to the same tunnel, so Cloudflare was routing some of my traffic to it — and it couldn't reach the web server, so those requests came back 502. The fix was removing both stray containers and restarting the whole stack, then verifying every hostname answered correctly from the outside. The lesson: a test connector you forgot about is a live connector. Kill your test setups, or they'll serve your traffic.</p>
+    <p><strong>The stale connector on the old machine.</strong> When the blog moved from its old box to the iMac, the old box's tunnel connector was still running. It had no rule for the new site, so requests it grabbed came back as 404s — while the iMac's connector served the same site fine. Requests alternated between working and 404ing, depending on which connector Cloudflare picked. The fix was stopping and disabling the old connector on the old box so it could never come back after a reboot.</p>
+    <p><strong>The consolidation that didn't work.</strong> I tried moving another site onto the main tunnel to keep everything in one place. It hung. The main tunnel's connector runs inside a Docker container on a bridge network, and that network can't reach a service running directly on the host's network — the traffic just dies. I reverted it the same day. One tunnel per network shape, or the connector has to live where it can actually reach the service. This is the same family of problem as the workshop needing its own container twin: the connector inside Docker reaches services by container name, or by a published LAN address — it can't reach a host service on an unpublished port.</p>
+    <p><strong>The password vault that looked broken but wasn't.</strong> I spent a while convinced the vault's tunnel didn't work. It did. The tunnel was healthy with four connections, the vault container was up and healthy, and every public check came back 200. What was most likely wrong was on my side — a cached error page, or an app still pointed at the old local address. That's the suspected cause, not a proven one: I never did report back the exact error I was seeing, so it stayed suspected. If the tunnel checks out and the container checks out, check your own browser and your own app settings before touching the tunnel.</p>
+    <p><strong>The subdomain depth limit.</strong> Two-level subdomains — a name under a name — can't terminate TLS through this tunnel on my setup, because the zone's standard certificate only covers one level and the advanced certificate option isn't enabled. I built the route, watched it fail on TLS, and reverted it the same day. The working pattern for those names is a tiny redirect project instead.</p>
+
+    <h2>What it costs</h2>
+    <p>Nothing beyond hardware I already owned. The whole homelab runs at zero dollars a month in operating costs — one domain a year is the only bill. The tunnel didn't add a subscription, a VPS, or a static IP.</p>
+
+    <h2>Verdict: who should copy this</h2>
+    <p>Copy this if you have a machine that genuinely stays on, services already running in Docker, and a domain in Cloudflare. The setup is a tunnel, a connector, one rule per hostname, and it stays out of your way after that.</p>
+    <p>Don't copy it if your "server" is a laptop that sleeps, or a machine you shut down at night. A tunnel doesn't keep your services up — it just faithfully reports that they're down. Every outage I had was the box, never the tunnel, and that's the deal: the tunnel moves the failure point from your router to your machine's uptime. If your machine is always on, that's a trade worth making. If it isn't, fix that first.</p>
+    <p><em>All images on this page are illustrations generated for this article unless otherwise credited.</em></p>
+  </article>
+  <p><a href="/">← All builds</a></p>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 D'Vaughn House · Homelab · Run AI on your own hardware.</p>
+    <p><a href="https://blog.dvaughnhouse.com">The Dispatch</a> — research &amp; narrative writing.</p>
+  </div>
+</footer>
+</body>
+</html>

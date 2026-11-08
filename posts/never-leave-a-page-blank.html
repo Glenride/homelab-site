@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Never Leave a Page Blank: The 164-Byte Stub That Looked Like an Outage — Homelab</title>
+<meta name="description" content="The Workshop's front page looked broken. The sign-in behind it was fine. The page itself was the defect — and fixing the file wasn't enough, because a second server was still serving the old one.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,700,800|newsreader:400,400i,500,600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">Home<span>lab</span></a></div>
+    <nav class="site">
+      <a href="/">Builds</a>
+      <a href="/about.html">About</a>
+      <a href="https://blog.dvaughnhouse.com">The Dispatch</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="post">
+    <h1>Never Leave a Page Blank: The 164-Byte Stub That Looked Like an Outage</h1>
+    <p class="meta">by D'Vaughn House</p>
+    <p><em>The Workshop's front page looked broken. The sign-in behind it was fine. The page itself was the defect — and fixing the file wasn't enough, because a second server was still serving the old one.</em></p>
+
+<h2>The report</h2>
+
+<p>On the morning of October 29, I opened the Workshop and saw a blank page. Not an error screen, not a loading spinner that never finished — just almost nothing. A heading and a link, floating on an unstyled page, where a front door should have been.</p>
+
+<p>I said so plainly, and I added my standing rule: we don't leave pages blank. A blank page reads exactly like an outage to anyone who lands on it — if you can't tell whether the thing is broken or just empty, for practical purposes it is broken.</p>
+
+<p>So this piece is about a defect that was 164 bytes long, and about the second time in two days that fixing the code didn't fix what the public saw.</p>
+
+<h2>What was actually wrong</h2>
+
+<p>First, what was not wrong: the sign-in chain worked. The sign-in route redirected as it should, and a session from the night before was still refreshing its dashboard data every minute. Chasing the sign-in system would have meant debugging a healthy thing while the real defect sat in plain sight.</p>
+
+<p>The real defect was the pre-login page itself: a bare stub — a heading and a Sign in link, 164 bytes, no styling, no explanation of what the Workshop is, no indication that anything lived behind the door. Technically it answered; visually it was blank. Checking the status alone would have said everything was fine. It wasn't. You have to actually look at the page.</p>
+
+<p>That distinction is now a standing rule of mine: never leave a page blank. A bare stub is a defect, not something to leave standing. Every page ships with real content, and verification means rendering it, not just confirming it answers.</p>
+
+<h2>The fix</h2>
+
+<p>The stub was replaced with a full styled landing page. The kicker reads Homelab Command, and one line says what it does: "Your machines, models, and jobs — live, in one place." There is a proper Sign in button, and a note that access is owner-only, so a visitor knows immediately that the dashboard behind the door is private rather than wondering whether the page failed to load.</p>
+
+<p>Once the container was restarted too, the public page served the new version at 1,406 bytes with all of its content present, and the gates stayed intact: the sign-in route still redirected as expected, and requests for dashboard data without a signed-in session were still turned away. The fix changed the front door, not the locks. Nothing about who can get in changed.</p>
+
+<p>Then came the part that would have fooled me if I had stopped there. The file was fixed, the local service was restarted, and the public page still served the stub.</p>
+
+<h2>The second server</h2>
+
+<p>Here is the trap. The Workshop doesn't run in one place: it runs as a service on the host machine, and also as a container — a second copy of the same server, set up so the tunnel has a container it can reach. The two share the same code directory, which sounds like it should mean they always agree. It doesn't.</p>
+
+<p>A running server loads its code into memory when it starts, so editing the shared files afterward changes what's on disk, not what's already running. The container had started with the old code loaded and kept serving the old page. Restarting the local service did nothing for the public page, because the public page wasn't coming from the local service. It was coming from the container.</p>
+
+<p>The fix only became real when the container was restarted too. Then it loaded the new code, and the public page finally served the new landing page. The lesson is blunt: patching one of two servers is patching half the system. Before declaring anything fixed, ask which server the public actually reaches — then restart that one.</p>
+
+<p>What stings is that this was the second time in two days the same trap fired. The evening before, a new sign-in gate had been deployed, and live traffic kept serving the old version of the app — all 22,434 bytes of it — while the sign-in route answered not-found. Same cause: the container had loaded the old code at its start and kept serving it. Restarting the container loaded the gate, and the front page then served the 164-byte sign-in page. That 164-byte page was, in other words, the visible scar of the previous night's fix: the gate had landed, but nobody had yet built it a proper front door. The next morning I looked at that scar and called it blank, because that's what it was.</p>
+
+<p>Two incidents, one mechanism, two different symptoms. The first time it looked like the new gate hadn't deployed. The second time it looked like the page was empty. Both times the code on disk was correct and the running server was stale. If I take one operational rule from this pair, it's that a deploy isn't done when the file is written. It's done when the server the public reaches is serving the new version, verified by looking at what it actually returns.</p>
+
+<h2>The proof</h2>
+
+<p>Here is exactly what the verification was. The new page was confirmed at the public edge at its full size with all its content, the sign-in route and the dashboard-data gates held, and a live re-visit later that morning confirmed the render itself: a centered column, the Homelab Command eyebrow, the Workshop heading, the subtitle, a dark-red Sign in button, the owner-access note, on a pale cream background. A finished, styled gate. No longer blank.</p>
+
+<p>The page is intentionally minimal — the dashboard itself sits behind Sign in. What changed is that the front door now looks like one: it tells you where you are, what lives inside, and how to enter. That is the whole job of a pre-login page, and the stub wasn't doing any of it.</p>
+
+<h2>Verdict</h2>
+
+<p>A blank page is not a minor cosmetic issue. It is indistinguishable from an outage, and it will be read as one. Treat any page with no real content as a defect, not a placeholder, and verify it by rendering it — a successful answer is not the same as a working page.</p>
+
+<p>And when you run a service twice — once on the host, once in a container — remember that they are two running programs, not one. Editing shared code updates neither of them until each is restarted. The public only ever sees one of them. Make sure the one it sees is the one you fixed.</p>
+
+<p><em>All images on this page are illustrations generated for this article unless otherwise credited.</em></p>
+
+  </article>
+  <p><a href="/">← All builds</a></p>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 D'Vaughn House · Homelab · Run AI on your own hardware.</p>
+    <p><a href="https://blog.dvaughnhouse.com">The Dispatch</a> — research &amp; narrative writing.</p>
+  </div>
+</footer>
+</body>
+</html>

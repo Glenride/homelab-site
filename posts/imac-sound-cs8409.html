@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>No sound on a 2017 iMac running Linux is a known quirk, not a dead machine — Homelab</title>
+<meta name="description" content="The 2017 iMac's Cirrus Logic CS8409 codec isn't driven by stock Linux drivers. Diagnose first, then reach for the community fix.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,700,800|newsreader:400,400i,500,600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">Home<span>lab</span></a></div>
+    <nav class="site">
+      <a href="/">Builds</a>
+      <a href="/about.html">About</a>
+      <a href="https://blog.dvaughnhouse.com">The Dispatch</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="post">
+    <h1>No sound on a 2017 iMac running Linux is a known quirk, not a dead machine</h1>
+    <p class="meta">by D'Vaughn House</p>
+
+
+    <h2>The goal</h2>
+    <p>Sound. Out of the speakers. On a machine whose speakers demonstrably work — they worked five minutes ago under macOS. My first question, honestly, was whether this was just a limitation of running Linux on a Mac. It's not. This should not be hard.</p>
+
+    <h2>Hardware and cost</h2>
+    <ul>
+      <li>2017 27" iMac (iMac18,3) with Cirrus Logic CS8409 audio codec</li>
+    </ul>
+
+    <h2>Software stack</h2>
+    <ul>
+      <li><strong>Arch Linux</strong> (Omarchy)</li>
+      <li><strong>cheapjourney/cs8409-apple-audio</strong> on GitHub — the community driver fix for this codec; I haven't tried it yet, it's next on my list</li>
+    </ul>
+
+    <h2>What broke and how it was fixed</h2>
+    <p>This one's a known quirk, not a mystery: the 2017 iMac's internal speakers use a Cirrus Logic CS8409 codec that stock Linux drivers simply don't drive. The headphone jack usually works fine — which is the tell. If headphones work and speakers don't, your hardware is fine; it's a driver gap.</p>
+    <p><strong>Diagnosis before surgery:</strong> check <code>wpctl status</code> — if you see Dummy Output, the system has no working audio device at all. Then plug in headphones and test. That thirty-second check tells you whether you're fighting hardware or software.</p>
+    <p>The fix path is the community driver at <strong>cheapjourney/cs8409-apple-audio</strong> on GitHub, which has been physically tested on the iMac18,3 running Omarchy.</p>
+    <p><strong>Still open — and this is the honest part:</strong> I still haven't run the <code>wpctl</code> check or the headphone test, and there's a GitHub patch repo I still need to try. So the diagnosis on <em>my</em> machine is unconfirmed and no driver has been installed. This post documents the playbook, not a completed fix — the fix itself is still on the to-do list.</p>
+
+    <h2>Verdict</h2>
+    <p>Never recommend a driver fix before seeing the hardware readout. Check <code>wpctl status</code>, test the headphone jack, and only then reach for the community driver. On Apple hardware under Linux, "no sound" is almost always a known quirk with a known fix — not a dead machine.</p>
+  </article>
+  <p><a href="/">← All builds</a></p>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 D'Vaughn House · Homelab · Run AI on your own hardware.</p>
+    <p><a href="https://blog.dvaughnhouse.com">The Dispatch</a> — research &amp; narrative writing.</p>
+  </div>
+</footer>
+</body>
+</html>

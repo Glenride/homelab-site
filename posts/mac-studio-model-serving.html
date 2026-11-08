@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Serving local AI models over my home network — Homelab</title>
+<meta name="description" content="A Mac Studio M2 Ultra with 64GB of unified memory, serving open-source models to every machine in the house.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,700,800|newsreader:400,400i,500,600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">Home<span>lab</span></a></div>
+    <nav class="site">
+      <a href="/">Builds</a>
+      <a href="/about.html">About</a>
+      <a href="https://blog.dvaughnhouse.com">The Dispatch</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="post">
+    <h1>Serving local AI models over my home network</h1>
+    <p class="meta">by D'Vaughn House</p>
+
+
+    <h2>The goal</h2>
+    <p>One machine in the house runs the models; every other machine — laptop, iMac, phone — just talks to it. No per-seat cloud subscription, no API meter running while I work. The Mac Studio is the engine room.</p>
+
+    <h2>Hardware and cost</h2>
+    <ul>
+      <li>Mac Studio with M2 Ultra and 64GB of unified memory</li>
+    </ul>
+
+    <h2>Software stack</h2>
+    <ul>
+      <li><strong>LM Studio</strong> — serves models over the local network through an OpenAI-compatible API, so anything that speaks the OpenAI API format can point at it</li>
+      <li><strong>Ollama</strong> — lightweight model runner, part of the regular rotation</li>
+    </ul>
+
+    <h2>What broke and how it was fixed</h2>
+    <p>The first problem was embarrassingly basic: <em>"how do i find the studio lan ip"</em> — my actual question. The answer: Option-click the Wi-Fi icon on the Studio, or System Settings → Wi-Fi → Details. It reported <strong>192.168.1.187</strong>, and that went into the harness config.</p>
+    <p>Then the port. I had 1234 in the config because that's LM Studio's default. The Studio said otherwise — "it says 1235 not 1234." So the endpoint became <code>http://192.168.1.187:1235/v1</code>, verified in my own terminal.</p>
+    <p>Then the reachability failure: the iMac still couldn't see the server. The diagnosis was that LM Studio was bound to localhost only — serving to itself, not the network. And here's the part where I got corrected: the old advice was "enable Serve on local network" on the Server tab. That toggle doesn't exist anymore in current LM Studio. The current path is <strong>LM Link</strong> — the mesh-networking route, end-to-end encrypted, nothing public. I took that correction from my own research and it stands: don't hand out LAN-binding steps for a UI that no longer has them. I haven't set up LM Link yet — still exploring it — so the Studio-to-iMac link remains on the to-do list.</p>
+
+    <h2>Verdict</h2>
+    <p>Serving models on your LAN is three things: the right IP, the right port, and the server actually bound to the network instead of localhost. Check all three before you blame the model. And when the software's UI changes out from under the guides, believe the software, not the guides.</p>
+  </article>
+  <p><a href="/">← All builds</a></p>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 D'Vaughn House · Homelab · Run AI on your own hardware.</p>
+    <p><a href="https://blog.dvaughnhouse.com">The Dispatch</a> — research &amp; narrative writing.</p>
+  </div>
+</footer>
+</body>
+</html>

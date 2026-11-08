@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Tunnel Had Two Ends: Hunting a Ghost That Only 404&#x27;d Half the Time — Homelab</title>
+<meta name="description" content="I fixed this exact bug once. It came back anyway — because stopping a service is not the same as killing it.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,700,800|newsreader:400,400i,500,600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">Home<span>lab</span></a></div>
+    <nav class="site">
+      <a href="/">Builds</a>
+      <a href="/about.html">About</a>
+      <a href="https://blog.dvaughnhouse.com">The Dispatch</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="post">
+    <h1>The Tunnel Had Two Ends: Hunting a Ghost That Only 404&#x27;d Half the Time</h1>
+    <p class="meta">by D'Vaughn House</p>
+    <p><em>I fixed this exact bug once. It came back anyway — because stopping a service is not the same as killing it.</em></p>
+
+<h2>The symptom</h2>
+
+<p>Some bugs announce themselves. This one just winked at me.</p>
+
+<p>One afternoon, the same blog page answered fine and then didn't. I would load it and get the article, load it again and get a 404, load it a third time and get the article back. There was no pattern I could see from my own machine. The page wasn't down. It wasn't up, either. It was both, depending on when I asked.</p>
+
+<p>Any single check told a clean story: either the site works, or the page is missing. It was only across many loads that the story fell apart. A site broken in a consistent way is easy to chase. A site broken half the time makes you doubt your own eyes first.</p>
+
+<h2>Two ends of one tunnel</h2>
+
+<p>When the blog moved from its old hosted box to its current host on October 22, the move went cleanly. The blog ran on the new host, the tunnel pointed at it, and the outside checks came back good. On the old box, the tunnel service was stopped and disabled, and the old blog container was left intact as a rollback. Sensible. Careful. And, as it turned out, not finished.</p>
+
+<p>A tunnel is two halves: the routing rules at the edge, and a connector process on a machine that dials out and holds the connection open. If two connectors claim the same hostname, the edge spreads requests across both. That is the whole bug in one sentence: the tunnel had two ends, and I only knew about one of them.</p>
+
+<p>The first time this happened was October 24. Requests to the dashboard app that shares the blog's tunnel started flapping between working and a catch-all 404. The diagnosis was the stale connector on the old box, still running with its old configuration: a rule for the blog, none for the dashboard, so anything it grabbed for the dashboard came back 404. The fix was stopping and disabling that service, and the site went stable. The earlier post in this series said disabling it would keep it from coming back after a reboot. That was wrong, and this piece is the correction.</p>
+
+<p>On October 27 it came back. The old box's tunnel service was running again — since the early morning of October 25 — with its stale configuration unchanged, serving a stale copy of the blog: seven posts, the newest from October 21, the current day's post absent entirely. The edge spread requests across the current connector and the stale one. A request that landed on the current host got the live blog; one that landed on the old box got a 404 where the article should have been. Same URL, two answers.</p>
+
+<h2>Proving it</h2>
+
+<p>First, the 404 itself. The error page was the blog platform's own template, not a generic edge error. The request had reached a real blog installation that truthfully did not have the page. Something was serving an old blog.</p>
+
+<p>Second, the current host's own logs. The current connector had logged zero 404s all day. The 404s were coming from somewhere else.</p>
+
+<p>Third, the cleanest test of all: while the old box was down, the same page answered 200 eight times out of eight. The randomness left with it.</p>
+
+<h2>The fix that didn't stick, and the one that did</h2>
+
+<p>Disabling a service sounds final. It is not. A disabled service does not start on its own at boot, but it can still be started by a trigger — something else on the machine that wakes it up. The October 24 fix had stopped and disabled the service, and at first that looked like enough. Then, on October 25, something started it again, and because the stale configuration and the stale blog container were both still sitting there intact, the ghost came back fully formed. The rollback I had kept "just in case" was the loaded gun.</p>
+
+<p>So the October 27 fix went one step further, in two parts. First, the stale service was stopped, disabled, and masked. Masking is the stronger version of disabling: instead of merely telling the service not to start, you point it at nothing, so it cannot start at all — not at boot, not by a trigger. It took two attempts, because the service's real unit file was still in place and blocked the mask; the file was moved aside first, and then the masking succeeded. Second, the stale blog container was stopped and removed entirely. The rollback was the risk, so the rollback had to go.</p>
+
+<h2>The honest open</h2>
+
+<p>I owe you one unsolved thing. What restarted the disabled service on October 25 is still unknown. No timer or scheduled job was found on the old box, and a review of its logs is still open. I can tell you exactly what the ghost did and exactly how I ended it. I cannot tell you what woke it up. Masking means it cannot happen again through that service — but the trigger itself is an open question, and I will not pretend otherwise. "Fixed" and "explained" are two different words. This one is fixed. It is not fully explained.</p>
+
+<h2>The verification habit</h2>
+
+<p>Here is the habit this bug taught me. A handful of fetches cannot catch a flapping bug. Four clean loads in a row feel like proof, but when the edge spreads requests across two connectors, four loads can easily all land on the good one. That is luck with a good story, not verification.</p>
+
+<p>The October 27 fix was verified the boring way: twenty rounds across three addresses — the article, the dashboard's login page, and the dashboard's front page — over several minutes. Every response came back clean. The point is the shape of the test: many probes, over minutes, across every address the tunnel serves. A bug that only shows up half the time needs a test that gives it time to show up.</p>
+
+<p>The deeper rule is one I keep relearning: a leftover is a live thing. A disabled service is a service waiting for a trigger. A rollback container is a stale site waiting for traffic. When you move a service, the move is not done when the new host answers. It is done when the old host cannot answer anymore — stopped, disabled, masked, and removed.</p>
+
+<p><em>All images on this page are illustrations generated for this article unless otherwise credited.</em></p>
+
+  </article>
+  <p><a href="/">← All builds</a></p>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 D'Vaughn House · Homelab · Run AI on your own hardware.</p>
+    <p><a href="https://blog.dvaughnhouse.com">The Dispatch</a> — research &amp; narrative writing.</p>
+  </div>
+</footer>
+</body>
+</html>

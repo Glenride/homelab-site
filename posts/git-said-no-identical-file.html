@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Git Said No to a File That Was Already Identical — Homelab</title>
+<meta name="description" content="A version-control tool refused a change on the grounds that local work would be lost — and the file it was protecting was already identical. The fix was to stop arguing with the tool.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,700,800|newsreader:400,400i,500,600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">Home<span>lab</span></a></div>
+    <nav class="site">
+      <a href="/">Builds</a>
+      <a href="/about.html">About</a>
+      <a href="https://blog.dvaughnhouse.com">The Dispatch</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="post">
+    <h1>Git Said No to a File That Was Already Identical</h1>
+    <p class="meta">by D'Vaughn House</p>
+    <p><em>A version-control tool refused a change on the grounds that local work would be lost — and the file it was protecting was already identical. The fix was to stop arguing with the tool.</em></p>
+
+<h2>A small change, a normal deploy</h2>
+
+<p>On the evening of October 27, 2026, I had a small change ready to ship: a condensed navigation bar for the main site. The bar had grown crowded, so the new version kept two links on top and tucked the rest under a "More" menu, and added a proper menu on mobile, where there had previously been no navigation at all. One file changed. It was committed and pushed to the main branch, and then it was time to get it onto the machine that actually serves the site: the iMac.</p>
+
+<p>That last step is where the evening stopped being routine. The iMac's copy of the site was sitting on a feature branch, not the main branch. Pulling one committed change from the main branch into a different branch is exactly what a cherry-pick is for.</p>
+
+<p>So I ran the cherry-pick. And Git said no.</p>
+
+<h2>The refusal that did not add up</h2>
+
+<p>The error was plain: my local changes would be overwritten by the cherry-pick. That message has a clear meaning. It means the file you are about to change is not clean — you have uncommitted work in it, and applying the change would clobber that work. Git was protecting me from losing something.</p>
+
+<p>There was just one problem. There was nothing to lose.</p>
+
+<p>I checked the file. It was byte-identical to the version already recorded in the worktree — verified by comparing hashes, not by eyeballing it. The file on disk and the file in the branch's history were the same file, down to the byte. And there was no special flag set on it that might have confused the comparison. By every check I could run, the worktree was clean where it mattered, and the cherry-pick should have gone through.</p>
+
+<p>It did not. And I want to be honest about the next part, because it is the whole point of writing this down: I still do not know why. That is not a coy way of saying the answer is complicated. The records from that night say the mechanism is still unknown, and nothing I have learned since has changed that. I have a refusal, a clean comparison, and no explanation connecting them. Anybody who tells you a tidy story about what Git was "really" doing here is inventing it. I am not going to do that.</p>
+
+<h2>Going around instead of through</h2>
+
+<p>When a tool contradicts your evidence, you can fight the tool until it agrees with you, or you can go around it and get the job done another way. That night, going around was the right call.</p>
+
+<p>The workaround skipped the version-control machinery entirely. Instead of asking Git to apply the change, I pulled the file straight out of the main branch and wrote it into the worktree as an ordinary file. No merge, no index, no cherry-pick — just the new contents, in place, by hand. Then I ran the build, the way the deploy hook normally would, and restarted the web and app services. That evening, the live site answered and served the new navigation. Done.</p>
+
+<p>It is worth saying what this workaround is and is not. It is not a fix: it does not explain the refusal, and it does not prevent the next one. It is a way to ship one file when the proper tool will not cooperate. I recorded it as a lesson that night because it is the kind of thing you forget under pressure: when the cherry-pick refuses on an identical file, you do not have to win the argument. Copy the file, build, restart, verify.</p>
+
+<h2>The second trap, hiding in the same evening</h2>
+
+<p>There was a second trap in that same deploy, and it is the one I think about more, because it was my own doing rather than the tool's.</p>
+
+<p>Earlier in the evening, I had discarded a local change to that same file using checkout — the command that throws away local edits and restores the recorded version. On this machine, that command is not as quiet as it looks: discarding a file fires a post-checkout hook, and the hook rebuilds the frontend assets immediately.</p>
+
+<p>The local change I discarded was a navigation link that existed only on the iMac — it had not been committed anywhere. The moment checkout discarded it, the hook rebuilt the site's assets from the version without that link. For a brief stretch, the built assets were the version missing a link that belonged there. The rebuild that followed the file copy restored it, and the final verified deploy was correct. But the order of operations had briefly produced a build I did not want, from a command I had treated as a harmless cleanup step.</p>
+
+<p>The lesson is about ordering: never discard a local change that way until the replacement file is already in place. If the hook rebuilds the moment you discard, then the discard itself is a deploy step, whether you meant it as one or not. Have the good file ready first, put it in place, and only then throw the old version away. A cleanup command that triggers a build is not a cleanup command.</p>
+
+<h2>What I actually learned</h2>
+
+<p>The first trap is about trusting your tools too much. Git's refusal message sounded authoritative, and it would have been easy to take it at face value and go hunting for a local change I had missed. The hash comparison said otherwise, and the comparison was right. When a tool and your evidence disagree, check the evidence twice, and then believe it enough to act.</p>
+
+<p>The second trap is about not reading your own commands all the way through. Checkout feels like tidying up. On a machine with hooks, it is also a trigger. Every command in a deploy chain does everything it is wired to do, not just the thing you had in mind when you typed it.</p>
+
+<p>And the third lesson is the least technical and the most important: write down the unsolved ones. An unsolved problem with an honest "mechanism still unknown" next to it and a working fallback underneath is far more useful than a gap in the notes where the problem used to be. The next time the cherry-pick refuses on an identical file, I will not have an explanation. I will have a workaround, a warning about the hook, and the knowledge that this has happened before. That is enough to ship. Curiosity and shipping do not have to wait for each other.</p>
+
+<p><em>All images on this page are illustrations generated for this article unless otherwise credited.</em></p>
+
+  </article>
+  <p><a href="/">← All builds</a></p>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 D'Vaughn House · Homelab · Run AI on your own hardware.</p>
+    <p><a href="https://blog.dvaughnhouse.com">The Dispatch</a> — research &amp; narrative writing.</p>
+  </div>
+</footer>
+</body>
+</html>

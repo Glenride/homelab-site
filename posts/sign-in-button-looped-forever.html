@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Sign-In Button That Looped Forever (and the Header That Proved Why) — Homelab</title>
+<meta name="description" content="I clicked the button, and nothing happened. The button wasn't broken. My test was.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,700,800|newsreader:400,400i,500,600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">Home<span>lab</span></a></div>
+    <nav class="site">
+      <a href="/">Builds</a>
+      <a href="/about.html">About</a>
+      <a href="https://blog.dvaughnhouse.com">The Dispatch</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="post">
+    <h1>The Sign-In Button That Looped Forever (and the Header That Proved Why)</h1>
+    <p class="meta">by D'Vaughn House</p>
+    <p><em>I clicked the button, and nothing happened. The button wasn't broken. My test was.</em></p>
+
+<p>The button sat in the header of my homepage: ThinkTank OS. Click it, sign in, get to work. That was the whole job of the button, and one evening in late October it stopped doing it. I clicked it and landed right back on the same page. I clicked it again. Same page. The button wasn't throwing an error or showing a blank screen. It just quietly did nothing, over and over, which is the worst kind of broken, because there is nothing to read and nothing to fix.</p>
+
+<p>Here is the part that stung: I had already verified the sign-in. It worked. I had checked it directly, and it answered exactly the way it was supposed to. So when the button looped, my first instinct was that the button itself was at fault, or that the page was stale. None of those were true. The sign-in worked and the button looped, both at the same time, and both facts were real. Reconciling those two facts is the whole story.</p>
+
+<p>The button was not a plain link. It was an Inertia link, which means it does not navigate the way a normal link does. A normal link tells the browser to go to a new page, full stop. An Inertia link asks the page to fetch the next view in place, without a full reload, and swap the content in. That is a nice experience when the next view lives on the same site — the frame stays, the content changes, nobody watches a white screen flash by.</p>
+
+<p>The old sign-in had been a form post on the same site, so in-page navigation handled it without complaint. Then the sign-in changed. The new flow hands you off to an outside sign-in page — a different origin entirely — and comes back with you signed in. That handoff is a redirect to an outside address, and that is where the button's world ended. In-page navigation cannot follow a redirect to another origin. It tries, the browser refuses the cross-origin hop inside that in-page request, and the request dies quietly. No error page, no message. The page just stays put.</p>
+
+<p>Meanwhile, every direct check I ran said the sign-in was fine, because every direct check skipped the button entirely. When you visit a sign-in address directly, the browser follows the redirect to the outside page like any redirect. There is no in-page navigator in the way, so nothing refuses the hop. The direct check answered "does the sign-in work?" and the answer was yes. But the button was never asking that question. The button was asking "does the sign-in work when reached through in-page navigation?" and nobody had asked that yet. That is the trap, stated plainly: a test that bypasses the thing you are testing will pass while the thing itself fails. I had verified the destination and never walked the path.</p>
+
+<p>Once the mechanism was clear, the fix was small, and it lived on the server, not in the page. The login handler learned to tell the two kinds of visitor apart. A direct visitor still gets the plain redirect to the outside sign-in page, exactly as before. But a visitor arriving through in-page navigation now gets a different answer: a full-page redirect instruction, delivered as a special status plus a header carrying the outside address, which tells the browser to abandon the in-page request and do a real, full visit instead. Same destination, different vehicle. No frontend rebuild was required, because nothing about the page was wrong. The answer it was getting was in a language its navigator could not use, and the server had to learn to answer in the right language for each visitor.</p>
+
+<p>Getting the fix right had one more wrinkle, because it nearly produced a second false result. The app's in-page navigation carries a version token with every request, computed from the app's own asset manifest, and the server checks it. If the token is wrong or missing, the server never reaches the login logic — it bounces the request back to the login page. So early reproduction attempts with a wrong or missing token looked like the original bug, for the wrong reason, and could have sent me fixing something that was not broken. The version-correct request finally reproduced the real button path: it returned the full-page redirect instruction pointing at the outside sign-in address, while the direct probe returned the plain redirect. Two visitors, two correct answers, one mechanism proven. Only then had anyone actually stood where the button stands.</p>
+
+<p>That same evening, I clicked the button myself and it worked — the full sign-in flow, start to finish, no loop. The test item blocked on my own click closed that night. I will not dress that up as more than it is: one button, one fix, one evening. But the lesson is bigger than the button, and it has changed how I verify things since. Test the path, not just the destination. If a user reaches a feature through a button, verification has to go through the button too, with the same kind of request the button actually makes — same navigation style, same version token, same everything. A direct probe is a fine check of the endpoint. It is not a check of the experience, and the difference between those two things is exactly where this bug lived, invisible, passing every test I ran, until a real click exposed it.</p>
+
+<p>The same evening, another app's sign-in was built with this lesson already in hand: its login links were the same kind of in-page links, so its handler was made to answer them with the full-page redirect from the start. The loop was found and fixed that evening. The lesson, written down and reused, costs nothing next time. That is the whole point of keeping a homelab notebook: not to collect stories about things breaking, but to make sure the same break happens only once.</p>
+
+<p>What is left unsolved here? Nothing about this button, as far as I know — it works, and my test that evening passed. What is left open is the wider habit this bug exposed: anywhere else in my setup where a check passes by skipping the user's actual path, there may be another quiet loop waiting. I have not audited every button for this. I am saying that plainly rather than implying the lesson is fully applied everywhere. The next time a button does nothing, though, I will know the first question to ask: am I testing what the user does, or something easier that merely looks like it?</p>
+
+<p><em>All images on this page are illustrations generated for this article unless otherwise credited.</em></p>
+  </article>
+  <p><a href="/">← All builds</a></p>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 D'Vaughn House · Homelab · Run AI on your own hardware.</p>
+    <p><a href="https://blog.dvaughnhouse.com">The Dispatch</a> — research &amp; narrative writing.</p>
+  </div>
+</footer>
+</body>
+</html>

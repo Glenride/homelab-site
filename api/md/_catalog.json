@@ -1,0 +1,29 @@
+{
+  "site": "Homelab",
+  "url": "https://homelab.dvaughnhouse.com",
+  "generated": "2026-11-05",
+  "routes": [
+    {
+      "path": "/",
+      "markdown": "/index.md",
+      "title": "Homelab — by D'Vaughn House",
+      "summary": "Run AI on your own hardware. Real builds, real benchmarks, no cloud bill.",
+      "updated": "2026-11-05"
+    },
+    {
+      "path": "/about.html",
+      "markdown": "/about.md",
+      "title": "About — Homelab by D'Vaughn House",
+      "summary": "Homelab is a build log by D'Vaughn House, Independent AI Orchestrator, about running AI on his own hardware.",
+      "updated": "2026-10-21"
+    },
+    {
+      "path": "/posts.md",
+      "markdown": "/posts.md",
+      "title": "Builds — Homelab",
+      "summary": "All 20 Homelab builds, listed as public titles and snippets. Full posts require sign-in and are not included here.",
+      "updated": "2026-11-05"
+    }
+  ],
+  "note": "Full posts under /posts/ require sign-in and have no markdown version; /posts.md lists public titles and snippets only."
+}

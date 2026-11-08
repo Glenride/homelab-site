@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Turning a 2017 iMac into a 24/7 homelab server — Homelab</title>
+<meta name="description" content="One aging all-in-one, Arch Linux, and a reverse proxy — the always-on box that runs the whole operation.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,700,800|newsreader:400,400i,500,600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">Home<span>lab</span></a></div>
+    <nav class="site">
+      <a href="/">Builds</a>
+      <a href="/about.html">About</a>
+      <a href="https://blog.dvaughnhouse.com">The Dispatch</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="post">
+    <h1>Turning a 2017 iMac into a 24/7 homelab server</h1>
+    <p class="meta">by D'Vaughn House</p>
+
+
+    <h2>The goal</h2>
+    <p>Give the operation an always-on box: scheduled jobs, self-hosted apps behind a reverse proxy, and a home for everything that shouldn't depend on a laptop lid staying open. The 2017 iMac — the same one that fought me through the Omarchy install — is that box now.</p>
+
+    <h2>Hardware and cost</h2>
+    <ul>
+      <li>2017 27" iMac (iMac18,3), repurposed — not retired</li>
+      <li>Omarchy / Arch Linux</li>
+      <li>Mac Studio on the same LAN as the model server and the file source</li>
+    </ul>
+
+    <h2>Software stack</h2>
+    <ul>
+      <li><strong>Omarchy / Arch Linux</strong> — the operating system</li>
+      <li><strong>Docker Compose</strong> — apps run as containers (hello-world verified clean post-install)</li>
+      <li><strong>Nginx Proxy Manager</strong> — reverse proxy for self-hosted apps</li>
+      <li><strong>Cloudflare Tunnel</strong> — exposes the iMac-hosted sites (dvaughnhouse.org, store) without port forwarding</li>
+    </ul>
+
+    <h2>What broke and how it was fixed</h2>
+    <p><strong>The machine that became a server didn't know it was one yet.</strong> One morning the sites went down with 502s. The Cloudflare tunnel was perfectly healthy — 8 active connections, routing both hostnames correctly. The problem was the iMac itself: I'd closed Docker, or the machine had slept. The tunnel was fine; there was just nobody home behind it. The fix was <code>docker compose up -d</code> on the ThinkTank OS stack, and the rule going forward: the iMac stays awake 24/7 with Docker running. Letting the display sleep is fine. Letting the system sleep takes everything offline.</p>
+    <p><strong>The mystery of the crashing "muse".</strong> Notifications kept popping up saying things were crashing on the homelab — and clicking one opened something called "muse" that told me I lacked an API key. My actual question at the time: <em>"Is my computer broken or is muse?"</em> The answer: neither, exactly. The crashes were normal homelab service hiccups, and clicking an alert invokes an AI crash-explainer literally named "muse" that needs an API key nobody ever gave it. It was never the local-agent harness (that was never installed on the iMac). The machine wasn't broken. It was just confused about who "muse" was.</p>
+    <p><strong>The migration.</strong> The site files lived on the Mac Studio (<code>~/Sites</code>, <code>~/sites2</code>) and moved to the iMac's <code>~/projects</code> over scp — slow going over the Studio's WiFi, but it got there. Core post-install came together the same week: WiFi on the right driver (192.168.1.191), Ethernet back (192.168.1.148), SSH installed and enabled, Docker verified.</p>
+
+    <h2>Verdict</h2>
+    <p>A homelab server is a mindset change more than a hardware one: the machine has to stay awake, Docker has to stay up, and when the sites 502, check the box before the tunnel. The tunnel is never the problem. The box is.</p>
+  </article>
+  <p><a href="/">← All builds</a></p>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 D'Vaughn House · Homelab · Run AI on your own hardware.</p>
+    <p><a href="https://blog.dvaughnhouse.com">The Dispatch</a> — research &amp; narrative writing.</p>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Docker on the iMac: what&#x27;s running and why — Homelab</title>
+<meta name="description" content="One old desktop, now the always-on box for the whole operation — here&#x27;s everything actually running on it in Docker, and what&#x27;s still missing from the picture.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,700,800|newsreader:400,400i,500,600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">Home<span>lab</span></a></div>
+    <nav class="site">
+      <a href="/">Builds</a>
+      <a href="/about.html">About</a>
+      <a href="https://blog.dvaughnhouse.com">The Dispatch</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="post">
+    <h1>Docker on the iMac: what&#x27;s running and why</h1>
+    <p class="meta">by D'Vaughn House</p>
+    <p><em>One old desktop, now the always-on box for the whole operation — here&#x27;s everything actually running on it in Docker, and what&#x27;s still missing from the picture.</em></p>
+
+<h2>The one-sentence version</h2>
+
+<p>A 2017 iMac running Arch Linux is the production host for the whole operation: the public websites, the blog, and the dashboards — all of it in Docker containers, all of it reachable from the internet through a Cloudflare Tunnel with no port forwarding. The self-hosted tools run in containers too, and they mostly stay on the LAN and the tailnet — they don&#x27;t face the public internet, with one exception: the password vault, which has its own public subdomain.</p>
+
+<p>This is a snapshot of what&#x27;s actually running on that machine, as of the last verified inventory in late October 2026. Not a wishlist, not a plan — the containers that were up, tested, and answering when someone checked.</p>
+
+<h2>How it got here</h2>
+
+<p>The iMac started as a desktop that fought its own install. By early October it had Arch Linux, working WiFi and Ethernet, SSH, and Docker verified with a hello-world run. The turning point came on October 11, when the ThinkTank OS stack went live behind a Cloudflare Tunnel and the iMac stopped being a project machine and became a production host: the Laravel app, Postgres, Redis, Horizon, and nginx, serving the main site and the store, verified live with a 200 response.</p>
+
+<p>By the morning of October 22, the count already stood at fifteen containers — that was the tally at 11:15, before the evening&#x27;s install added six more.</p>
+
+<p>Eleven days later, on October 22, a second wave landed: the self-hosted starter stack — a homepage dashboard, an alert service, a job monitor, a page-change watcher, a password vault, and a file-sync service — all six containers up and verified on localhost, the LAN, and the tailnet in the same session.</p>
+
+<p>The blog moved in on October 22. The Workshop dashboard followed. A system map for Glenride went live on October 25. And the machine that was once a repurposed all-in-one was the always-on box everything depends on.</p>
+
+<h2>The public sites</h2>
+
+<p>These are the containers the outside world actually touches.</p>
+
+<p><strong>ThinkTank OS — the main site and the store.</strong> The Laravel app (PHP 8.4) with Postgres, Redis, Horizon, and nginx. It serves the main site and the store subdomain through the tunnel. This is the stack that went live on October 11, and it&#x27;s the reason the iMac has to stay awake: when this stack is down, the public sites are down. Most outages so far have traced to the box behind the tunnel, not the tunnel itself — with one exception: on October 24 a stale tunnel connector on the InstaBox split traffic on the shared ghost-blog tunnel and flapped Grand Central, while the blog itself stayed up through it.</p>
+
+<p><strong>The Dispatch — the blog.</strong> A single Ghost container (ghost:alpine) with SQLite, plus its own tunnel connector. It moved to the iMac from its old host on October 22, and the public checks passed twice that night: home, posts, images, and the admin panel all answering. It is the simple setup — one container, one database file, no separate database server.</p>
+
+<p><strong>The Workshop — the homelab command dashboard.</strong> This one has a history, and it&#x27;s worth telling straight. The Workshop started as a host service on port 8791, not a container. A container twin was added the same day it was built, October 22, because the iMac&#x27;s firewall blocks container-to-host-IP traffic and the tunnel needed a container to reach. Then the twin started crash-looping — restarting over and over with a segfault — while the host service kept answering fine. On October 25, at about 02:02 in the morning, the twin was stopped as redundant. That broke the public Workshop: the tunnel ingress still pointed at a hostname that existed only as a host systemd service, and the tunnel&#x27;s Docker DNS couldn&#x27;t resolve it, so the site answered 502. A replacement container went in that same evening at 21:21 — built on python:3.12-slim, chosen over Alpine because the Alpine image segfaulted on a basic network import — and the Workshop came back. The host service stayed for tailnet and LAN access.</p>
+
+<p><strong>Glenride System Map.</strong> A Flask app in a single container on port 8090, live at its own subdomain since October 25. It&#x27;s the interactive org chart and operating-structure map for Glenride — departments, budget cycle, money flow, governance — with editable cards backed by a database file.</p>
+
+<h2>The self-hosted tools</h2>
+
+<p>These don&#x27;t face the public. They face the household — the person running the operation.</p>
+
+<p><strong>Nginx Proxy Manager.</strong> The reverse proxy for the self-hosted apps. It got a patched rebuild during the October 23 certificate incident (more on that below), and it&#x27;s the piece that decides which internal service answers which local address.</p>
+
+<p><strong>Homepage.</strong> The dashboard — one page with links to everything else. It runs on port 3000 and was one of the six containers verified on October 22.</p>
+
+<p><strong>Vaultwarden.</strong> The password vault, on port 8081, live at its own subdomain since October 23. One open item from that day&#x27;s check: signups were still allowed on the public vault, which is the kind of thing you close the moment your own account exists.</p>
+
+<p><strong>ntfy.</strong> The alert service, on port 8086, with a write-only alerts topic for homelab notifications. It&#x27;s how the machine taps its owner on the shoulder.</p>
+
+<p><strong>Healthchecks.</strong> The job monitor, on port 8008. It watches the scheduled work — the morning and evening sweeps, the Monday digest, the weekday job scraper — and notices when one of them doesn&#x27;t check in.</p>
+
+<p><strong>changedetection.</strong> The page-change watcher, on port 5000. It watches pages and says something when they change. It also got a patched rebuild during the October 23 certificate incident.</p>
+
+<p><strong>Syncthing.</strong> The file-sync service, on port 8384, set up to sync with the Mac Studio — the pairing accept on the Studio side was still his pending step at install time, and no confirmation is on record. It&#x27;s the quiet one — it&#x27;s meant to move files between the two machines so nothing lives in only one place.</p>
+
+<h2>The apps and the bots</h2>
+
+<p><strong>D&#x27;Quizz and InspireWrite.</strong> Two more Laravel apps in their own containers — the quiz app and the Bible reader app. Both were rebuilt during the October 23 certificate incident and verified live afterward.</p>
+
+<p><strong>The bots.</strong> Three bot containers were confirmed running and re-verified on October 23: the trading bot, the community-manager bot, and the Prism bot. They run alongside everything else on the same host.</p>
+
+<h2>The one that isn&#x27;t on a Docker network</h2>
+
+<p>Grand Central — the terminal-style dashboard on port 8001 — is a host-networked container, not a bridge-networked one. This matters more than it sounds. On October 24, an attempt to move it onto the main tunnel failed for exactly this reason: the tunnel connector runs on a Docker bridge network, and bridge-network containers can&#x27;t reach a host-networked service on an unpublished port. The move was reverted the same night. Grand Central stays where it is, on its own host-networked tunnel connector, until its deployment changes. If you ever wonder why Grand Central stays on the blog&#x27;s tunnel instead of the main one, this is why.</p>
+
+<h2>The day the certificates broke</h2>
+
+<p>On October 23, a certificate-authority incident forced a rebuild of half the stack. A compromised certificate bundle meant containers that trusted the wrong certificates had to be rebuilt on fresh base images and re-tested from inside — each one probed to confirm it now rejected the bad endpoint instead of connecting to it.</p>
+
+<p>The ThinkTank app and Horizon were rebuilt on a fresh PHP image and the whole stack recreated. The quiz app and the Bible app were recreated on rebuilt images. The homepage and the alert service were recreated on fresh images. The page-change watcher and the proxy manager got durable patched builds so the fix would survive the next rebuild. The trading bot, the job monitor, the Prism bot, the community-manager bot, the Workshop twin, and the blog were already patched and re-verified.</p>
+
+<p>One container image was pulled fresh and deliberately not started: Paperless, the document manager. It&#x27;s on the shelf, not on the box. That&#x27;s the honest state of it — available, not running.</p>
+
+<p>The iMac host itself is still waiting on its own fix, a system package update that needs his one manual step. The host and the containers are separate patients, and only the containers got treated that day.</p>
+
+<h2>What &quot;running&quot; means here</h2>
+
+<p>Every container named above was verified running on a specific date — seen up, answering requests, or tested from inside during the October 22 install, the October 22 migration, the October 23 incident response, or the October 25 verifications, when the System Map went live and the replacement Workshop container was added. Nothing in this guide is a container that was planned, drafted, or installed somewhere else and assumed to be here.</p>
+
+<p>But a snapshot is a snapshot. The count was fifteen containers on October 22, and the inventory changed on October 23 and 25 — containers rebuilt on the 23rd, one stopped and one added on the 25th. There is no single complete container listing on record after those changes. What&#x27;s listed at the end is exactly what&#x27;s missing to turn this snapshot into a current inventory.</p>
+
+<h2>The shape of it</h2>
+
+<p>Step back and the pattern is simple. One old computer, one Docker host, three kinds of work: public sites the world sees, tools the household uses, and apps and bots that do jobs in the background. Two tunnels in front of it all, no open ports: one for the blog and Grand Central, one for everything else — a one-tunnel consolidation was tried on October 24 and reverted the same night. And one rule that has held through most outages so far — when something goes down, check the box before the tunnel. Usually the box is the problem. Once, it was a stale tunnel connector.</p>
+
+<h2>What&#x27;s still missing</h2>
+
+<p>These are the records that would make this guide complete and current. Nothing here is invented to fill the space.</p>
+
+<ol>
+<li><strong>No single current container listing.</strong> I have no complete <code>docker ps</code> output after October 25. The October 22 count was fifteen containers; the October 23 incident list names the containers that were tested, but it is a test list, not a full inventory. A current listing would confirm which containers are still running, which stopped, and whether anything new appeared.</li>
+<li><strong>The bots&#x27; exact jobs are not documented in my notes.</strong> The trading bot, the community-manager bot, and the Prism bot were confirmed running on October 23, but my notes don&#x27;t state in one place what each bot does day to day. Their roles will come from my own records, not from their names.</li>
+<li><strong>Port numbers are on record for only some containers.</strong> The Tier 1 stack ports (Homepage :3000, ntfy :8086, Healthchecks :8008, changedetection :5000, Vaultwarden :8081, Syncthing :8384), Ghost (:2368), the Workshop (:8791), the System Map (:8090), Grand Central (:8001), the quiz app (dquizz-app :8000), the Bible app (bible-app :3000 — the container&#x27;s own port, reached through the tunnel by service name, not a host-published port), and ThinkTank&#x27;s web service (:80) are recorded. Port numbers for the ThinkTank stack&#x27;s internal services (Postgres, Redis, Horizon) and the three bots aren&#x27;t in my notes.</li>
+<li><strong>Compose files and container names are not fully on record.</strong> My notes name some containers (thinktank-os-app-1, horizon, dquizz-app, bible-app, the-workshop-web, the-workshop, glenride-system-map, the-dispatch-ghost) but don&#x27;t give a complete container-name list or the compose files that define the stacks.</li>
+<li><strong>Resource use is only partly on record.</strong> Two host figures exist: 145G of disk free on October 22, and a load of about 1.1 after the October 24 reboot. But no per-container CPU or memory figures appear in my notes, so any claim about how hard any single container works would be invented.</li>
+<li><strong>The Mac Studio is out of scope for this guide.</strong> Docker on the Studio is a separate, blocked story (Hub pulls fail on the locked macOS keychain), and the Studio runs its model server natively, not in Docker. It belongs in its own piece, not this one.</li>
+<li><strong>Paperless is pulled but not running.</strong> The image was pulled fresh on October 23 and deliberately not started. Whether it gets installed, and when, is my call — this guide should not present it as part of the running stack until it is.</li>
+</ol>
+
+<p><em>All images on this page are illustrations generated for this article unless otherwise credited.</em></p>
+
+  </article>
+  <p><a href="/">← All builds</a></p>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 D'Vaughn House · Homelab · Run AI on your own hardware.</p>
+    <p><a href="https://blog.dvaughnhouse.com">The Dispatch</a> — research &amp; narrative writing.</p>
+  </div>
+</footer>
+</body>
+</html>
