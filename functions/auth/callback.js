@@ -29,7 +29,16 @@ function safeEqual(a, b) {
 
 function cookieValue(cookieHeader, name) {
   const m = (cookieHeader || '').match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
-  return m ? decodeURIComponent(m[1]) : '';
+  if (!m) return '';
+  // A malformed cookie value (bare % not followed by two hex digits)
+  // must fail the state check, never throw: an uncaught
+  // decodeURIComponent here used to 1101 the whole callback
+  // (2026-11-08: a stale hb_oauth_state cookie with a bad % sequence).
+  try {
+    return decodeURIComponent(m[1]);
+  } catch {
+    return '';
+  }
 }
 
 function b64urlEncode(str) {
