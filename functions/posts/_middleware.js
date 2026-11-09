@@ -57,7 +57,7 @@ async function hasSession(request, env) {
   return safeEqual(await hmacHex(env.WORKOS_API_KEY, `${email}.${expiry}`), sig);
 }
 
-export async function onRequest({ request, env, context }) {
-  if (await hasSession(request, env)) return context.next();
+export async function onRequest({ request, env, next }) {
+  if (await hasSession(request, env)) return next();
   return Response.redirect(new URL('/#auth_required', request.url), 302);
 }
