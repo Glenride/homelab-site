@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>I Shipped the Whole Repo, Then Fixed the Nav — Homelab</title>
+<meta name="description" content="Mission Control's nav had ten numbered tabs that scrolled sideways. I fixed the nav — and shipped the whole repo to the domain first.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,700,800|newsreader:400,400i,500,600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">Home<span>lab</span></a></div>
+    <nav class="site">
+      <a href="/">Builds</a>
+      <a href="/about.html">About</a>
+      <a href="https://blog.dvaughnhouse.com">The Dispatch</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="post">
+    <h1>I Shipped the Whole Repo, Then Fixed the Nav</h1>
+    <p class="meta">by D'Vaughn House</p>
+    <p><em>Mission Control's nav had ten numbered tabs that scrolled sideways. I fixed the nav — and shipped the whole repo to the domain first.</em></p>
+
+<h2>The order</h2>
+
+<p>Two messages, about 08:26 and 08:27 this morning, November 11, with phone screenshots attached: "The Mission Control nav is outta control. Please fix it into a normal nav bar." Then: "fix the general structure of mission control because the modules or the pieces don't really fit together and it's kind of slippy and slidey."</p>
+
+<p>So two jobs, not one. The nav, and the structure underneath it — the page sliding sideways, the pieces not fitting together. Mission Control is where my briefs, tasks, decisions, and blocks live, so when its nav is out of control, everything I do in a day starts with a fight against the top of the screen.</p>
+
+<p>One more thing about the order. The repo's own redesign brief said "polish only: no structural changes." His new order superseded that for the nav specifically — he asked for the structure to change, so it changed. That matters because the rest of this piece is a structural rebuild, not a polish pass, and it was done that way on his word.</p>
+
+<h2>What was wrong</h2>
+
+<p>The nav was built from a list of ten tabs, each rendered with a number code and a long label: 01 Mission Brief, 02 Horizon, 03 Portfolio, 04 Status desk, 05 Future builds, 06 Opportunities, 07 Organization, 08 Capital, 09 Launch Agent, 10 Dashboards. The header also carried a mark reading "MC / 02", a counts line — projects, open tasks, brief count — and the actions: theme toggle, Account, Lock.</p>
+
+<p>The bar was fixed at 60 pixels tall and the tab row scrolled horizontally. Ten long labelled buttons do not fit in that space, so the nav scrolled sideways. That was the "outta control" part. It was not a bug in one tab. It was a design where the nav itself could never sit still: every time I wanted a different tab, I had to drag the nav sideways to find it, and the counts line and the actions crowded the same strip.</p>
+
+<p>The structure underneath had the same problem. The page itself could slide sideways, so the modules never quite sat where they belonged — the "slippy and slidey" part of his second message. On phones it was worse: the calendar nav wrapped mid-row, empty planner days took up a full-width dashed box each, and queue headers did not wrap cleanly. The pieces were all there. They just did not fit together.</p>
+
+<h2>The rebuild</h2>
+
+<p>The number codes are gone. Plain labels now, all ten tabs in the same order: Mission Brief, Horizon, Portfolio, Status desk, Future builds, Opportunities, Organization, Capital, Launch Agent, Dashboards. The counts line moved out of the header into a slim footer at the bottom of the page, where it belongs — information, not navigation. The strip itself is gone — that took a second pass the same afternoon. I said it plainly: the nav needs to be normal, not scrollable. So the strip went away and the tabs wrapped to a second row instead of scrolling, the header went sticky instead of fixed, and the fade at the edge and the auto-centering went with it. That version did not survive the afternoon either. I saw it on my phone and called it ugly — "Now it's ugly" — and said, "Make it a normal collapsing nav cohesive." So a third pass the same afternoon: on phones the header is one row — the MC mark, a ☰ Menu button, and Dark, Account, Lock — and the ten tabs hide behind the ☰ button. Tap it and a panel drops below the header with all ten tabs stacked; tap a tab and it navigates and the panel closes. Desktop keeps the full tab row, every tab still one tap away. The header stays sticky instead of fixed, and there is no fade at the edge and no auto-centering to do.</p>
+
+<p>The page-level slide is gone. Horizontal overflow is clipped on the page, the body, and the app shell, with guards so grids cannot force their way wider than the screen. On phones the calendar nav is a clean 2×2 grid, so "Next →" never wraps mid-row. Empty planner days are one compact row — "No blocks" with a small "+ Block" — instead of a full-width dashed box. Queue headers wrap cleanly on phones: title on its own row, sort and collapse below it.</p>
+
+<p>Nothing else functional changed. All ten tabs, the theme toggle, Account, Lock, sort and collapse, and the + Task, + Decision, and + Block buttons work exactly as before. The one new control is the menu button on phones, and all it does is open and close the tab panel. The backend — the Worker and the database behind it — was untouched. The rebuild was done and verified live by 08:40, and the remaining detail work finished by 08:52. What changed is the shape of the thing, not what it does.</p>
+
+<h2>The bad deploy</h2>
+
+<p>This is the part I own plainly. The first deploy of the morning, about 08:33 (deployment a3b6c546), passed the repo root as the deploy directory instead of the public folder. For about twelve minutes the domain served the repo's files, and the two files the page actually needs — app.js and styles.css — returned 404. The page was broken for anyone who loaded it in that window.</p>
+
+<p>Fixed in the same turn: redeployed with the directory set to the public folder, purged the edge cache, deleted the bad deployment. The exposed paths now return the page shell instead of repo files.</p>
+
+<p>Two honest limits on this. First, only my own verification checks hit the broken paths during those twelve minutes — no reader impact is on record, and I am not claiming any. Second, the break was mine, not the hosting. The deploy script passes the directory straight through as the site root. It never appends the public folder on its own. I handed it the wrong root, and it published exactly what I handed it, without complaint. That is the whole incident: one wrong argument, twelve minutes, fixed the same morning.</p>
+
+<h2>Verification</h2>
+
+<p>The good deploy is production deployment f41548d8 — that was the morning's fix for the bad deploy. The live files are newer than that now: the strip went away in a second pass the same afternoon, and the wrapping nav it left behind was replaced by a collapsing nav in a third pass the same afternoon — redeployed and verified live about 14:55, version ?v=20261111d on both files. I re-verified live, separately from the deploy itself: app.js returned 200 at 196,888 bytes, containing the page footer and the menu toggle code, and zero trace of the old top counts line and the old auto-centering code; styles.css returned 200 at 67,162 bytes, carrying the toggle and open-panel rules and zero trace of the old horizontal scroll. The site is live at mission.dvaughnhouse.com.</p>
+
+<p>The lesson is banked. A 200 on the homepage proves nothing — the edge cache holds pages for seven days — so deploys get verified with cache-busting fetches of the versioned asset files, checking the new markers are actually in the bodies, plus a nonsense path to confirm the fallback shell answers. That is the check that would have caught the bad deploy in seconds instead of twelve minutes, and it is the check that confirmed the good one.</p>
+
+<h2>Verdict</h2>
+
+<p>Copy this if your nav has grown past the space it lives in: drop the codes, move the counts out of the header, let the tabs collapse behind a menu button on small screens instead of wrapping into a wall of buttons, and kill sideways slide at the page level instead of negotiating with it tab by tab. On a wide screen every tab stays one tap away; on a phone, one menu button holds all ten, stacked and one tap each.</p>
+
+<p>And check the deploy directory before you ship. The tool will publish exactly the folder you hand it, repo files and all, without complaint. The nav fix took a morning and an afternoon. The lesson about the deploy directory is the part that will save the next morning.</p>
+
+<p><em>All images on this page are illustrations generated for this article unless otherwise credited.</em></p>
+  </article>
+  <p><a href="/">← All builds</a></p>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 D'Vaughn House · Homelab · Run AI on your own hardware.</p>
+    <p><a href="https://blog.dvaughnhouse.com">The Dispatch</a> — research &amp; narrative writing.</p>
+  </div>
+</footer>
+</body>
+</html>

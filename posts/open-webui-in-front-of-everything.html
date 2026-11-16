@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Putting Open WebUI in front of everything — Homelab</title>
+<meta name="description" content="One chat window in front of everything I actually ask an AI to do — the model, the case-law search, the legal research, the Ohio code lookup.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,700,800|newsreader:400,400i,500,600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">Home<span>lab</span></a></div>
+    <nav class="site">
+      <a href="/">Builds</a>
+      <a href="/about.html">About</a>
+      <a href="https://blog.dvaughnhouse.com">The Dispatch</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="post">
+    <h1>Putting Open WebUI in front of everything</h1>
+    <p class="meta">by D'Vaughn House</p>
+    <p><em>One chat window in front of everything I actually ask an AI to do — the model, the case-law search, the legal research, the Ohio code lookup.</em></p>
+
+<h2>The goal</h2>
+
+<p>That is what the window is for. What is actually in it today: the model, GPT-5.4, and one tool server confirmed working end-to-end inside Open WebUI — Pipeworx. The other two servers, CourtListener and legal-mcp, are verified live on the Studio; their adds in Open WebUI are not directly on record.</p>
+
+<h2>Hardware and cost</h2>
+
+<ul>
+<li>Mac Studio (M2 Ultra, 64GB unified memory) — the container and the two self-hosted servers run here. The model itself runs at OpenAI, not on the Studio.</li>
+<li>2017 iMac (Omarchy/Arch Linux) — not in this story at all. There is no Open WebUI on the iMac; its port 8080 belongs to something else entirely.</li>
+</ul>
+
+<p>No new hardware was bought for this. No cost figures are on record for the setup itself; the machines were already on the desk.</p>
+
+<h2>Software stack</h2>
+
+<ul>
+<li><strong>Open WebUI 0.13.3</strong> — updated today, November 10, 2026, from 0.11.0. It runs as a container on the Mac Studio, host port 3000 to container port 8080. One admin account, mine. Sign-in verified working twice today.</li>
+<li><strong>The model in the chats is GPT-5.4</strong> — the model I named for Open WebUI. The chats run against it through OpenAI: the test question came back with an OpenAI-side server error, which is how I know the call goes to OpenAI and not to anything on my own machines.</li>
+<li><strong>CourtListener MCP server, self-hosted on the Studio on port 8000</strong> — 34 tools: case-law search, dockets, RECAP documents, audio, people, courts, clusters, citation lookup and verification, and a federal-regulations suite. The CourtListener API token is in place on the server, verified live: a search for "Miranda v Arizona" returned 47,312 opinions, the top hit the real Miranda v. Arizona.</li>
+<li><strong>legal-mcp, self-hosted on the Studio on port 8001</strong> — 27 tools: precedent and case-law research, citation validation, contract comparison and clause analysis, document analysis, privilege-risk checks, brief scaffolding. PACER is off, demo content is off. Local research returns empty until I feed it documents; the contract, brief, and citation-format tools work on my own files now.</li>
+<li><strong>Pipeworx gateway, hosted, reached by API key</strong> — Ohio Revised Code by citation, a research chain that follows a paper from DOI to open-access copy to datasets to citing papers, and the rest of the gateway's tools. Pipeworx queries go to Pipeworx's gateway, not to anything local; the underlying data is public record and public APIs.</li>
+</ul>
+
+<p>What this post does not claim: no local model backend is recorded as connected. The stack post calls Open WebUI the chat interface for local models, and LM Studio and Ollama are on the same machines — but no source on record says Open WebUI is wired to either of them. What is on record, as of today, is GPT-5.4 in the chats and three MCP tool servers verified live — with the evidence split. Pipeworx is confirmed working end-to-end inside Open WebUI; I confirmed it myself. CourtListener and legal-mcp are verified live as servers on the Studio, with the token in place. The audit log's 13:58 summary lists all three as live in Open WebUI, but there is no direct record of the two self-hosted adds — the legal-mcp add walkthrough was dropped at my word at 13:43.</p>
+
+<h2>What broke and how it was fixed</h2>
+
+<p><strong>The admin password, November 10, 12:40–12:43.</strong> I needed a new password for the single admin account. The database was backed up inside the container before anything was touched, the new password was generated at my tap, and sign-in was verified live immediately after — a 200 with a token. The password itself is not written down anywhere in the record, and it will not be here either. The lesson is the boring one: back up before you touch auth.</p>
+
+<p><strong>The update, November 10, about 12:48.</strong> Open WebUI went from 0.11.0 to 0.13.3 — new image dated November 8, replacing one from July 27. There is no compose file for this container anywhere on the Studio, so it was recreated from its own inspect config: same data volume, same port mapping, restart always, same extra host entry. Fresh database backup first, same as the password reset. The new container came up healthy, the version endpoint reported 0.13.3, and sign-in with the new password was re-verified. The old image is still on disk.</p>
+
+<p><strong>The two self-hosted MCP servers, November 10, about 13:28–13:35.</strong> Two blockers, both on the Studio side. First, the Docker credential helper cannot run over a non-interactive SSH session — the macOS keychain is locked there — so the build used a credential-free Docker config and the standalone compose binary instead. Second, legal-mcp crash-looped on arrival: its requirements file pins the MCP library with no upper bound, and version 2 removed the module it imports. The fix was a pin to the 1.x line in the Studio checkout. After that, both servers verified live: the CourtListener search above, and legal-mcp reporting CourtListener enabled and PACER off.</p>
+
+<p><strong>The wrong section, then the wrong URL, November 10, about 13:53–13:58.</strong> MCP connections do not live under plain Settings → Integrations — that page is OpenAPI-only, with the type locked. They live under Admin → Integrations → External Tool Servers. Then the first Pipeworx URL I was handed was the OAuth-only gateway endpoint. Its tools/list runs to 7,549 tools on its first page — measured on the gateway from the VM, not inside Open WebUI. In Open WebUI the tools showed briefly, then the connection failed. The fix was the canonical client URL with an API key. After the fix, and a retry past a transient OpenAI-side 500, the test worked — I confirmed it myself: Pipeworx works. By the end of the session the audit log's 13:58 summary lists all three connections — CourtListener, legal-mcp, and Pipeworx — as live in Open WebUI.</p>
+
+<h2>Verdict</h2>
+
+<p>Copy this if you want one chat window over a model reached through OpenAI, with self-hosted tools behind it that you control — and if you are willing to do the unglamorous parts: back up the database before touching auth, and keep the container recreatable from its own config when there is no compose file to fall back on. That is the whole trick. There is no install story in this post because the container predates the record; what is here is the maintenance, the update, and the day the tools were verified live.</p>
+
+<p>If the part you wanted was the local-model wiring — LM Studio or Ollama as backends inside Open WebUI — this post does not prove it yet. That connection is not on record. What is proven is the shape of it: one front door, one model, three tool servers verified working today as servers — and only Pipeworx verified working through the front door itself.</p>
+
+<p><em>All images on this page are illustrations generated for this article unless otherwise credited.</em></p>
+  </article>
+  <p><a href="/">← All builds</a></p>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 D'Vaughn House · Homelab · Run AI on your own hardware.</p>
+    <p><a href="https://blog.dvaughnhouse.com">The Dispatch</a> — research &amp; narrative writing.</p>
+  </div>
+</footer>
+</body>
+</html>

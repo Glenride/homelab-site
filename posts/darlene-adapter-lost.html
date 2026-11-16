@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Adapter That Lost — Homelab</title>
+<meta name="description" content="I trained my own assistant to sound like me. Three runs finished training, and all three adapters lost the head-to-head — the third after dying twice before its first checkpoint, then finishing clean at sequence length 512 and losing anyway.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,700,800|newsreader:400,400i,500,600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">Home<span>lab</span></a></div>
+    <nav class="site">
+      <a href="/">Builds</a>
+      <a href="/about.html">About</a>
+      <a href="https://blog.dvaughnhouse.com">The Dispatch</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="post">
+    <h1>The Adapter That Lost</h1>
+    <p class="meta">by D'Vaughn House</p>
+    <p><em>I trained my own assistant to sound like me. Three runs finished training, and all three adapters lost the head-to-head — the third after dying twice before its first checkpoint, then finishing clean at sequence length 512 and losing anyway.</em></p>
+
+<h2>The idea</h2>
+
+<p>Darlene is my local personal assistant, running on the iMac with her own Qwen3.8-27B model on the Mac Studio. The idea was simple: teach her to sound like me, using my own writings — not a new model or a bigger one, a small adapter trained on my voice and laid over the model she already runs on.</p>
+
+<p>This piece is only about the middle step: pick my writings, train a LoRA adapter on them with MLX on the Studio, and test it against the base model before anything gets wired in. The rule was that the adapter had to beat the base model to earn its place. It never did.</p>
+
+<h2>The data</h2>
+
+<p>The first dataset was 83 pairs from my own writings. Each prompt was the same shape — &quot;Write about: &lt;topic&gt;&quot; — chosen answer my writing, rejected answer unrelated text. Voice only: no workflow, format, or task pairs, nothing mined from chat turns, nothing invented.</p>
+
+<p>I ordered the pairs raised to 200, the flywheel config&#x27;s minimum. The voice corpus was exhausted at 83 topics, so the 117 new pairs are the remainders of the 22 long writings from the first set — everything past the 2,000-character truncation, split at sentence boundaries. No overlap, nothing invented; the first 83 rows are byte-identical, the whole set verified by checksum. The split was 180 train, 10 valid, 10 test.</p>
+
+<p>The limits matter for everything after: easy negatives, not near-misses in my voice, and 44 of the 117 new pairs from just two topics. The corpus was exhausted after that.</p>
+
+<h2>The first run</h2>
+
+<p>Training was SFT LoRA through MLX 0.32.2: rank 16, batch 1, sequence length 1024, learning rate 1e-5. The first attempt failed at iteration 0 — dashed config keys were silently ignored, so it launched with the wrong settings and hit a Metal out-of-memory error. The corrected config ran.</p>
+
+<p>It finished 500 of 500 iterations — 100 to a checkpoint, then a resume for 400 more. Test loss 2.682, test perplexity 14.617, final checkpoint 111MB. On the numbers alone, it looked like a run that worked.</p>
+
+<p>Then came the test that mattered. On held-out prompts, head to head: base model 8 wins, adapter 2 wins, 3 ties. The adapter lost — the test-loss win did not survive real prompts. The verdict was to not wire it in.</p>
+
+<p>There was a second reason the verdict was easy: an MLX adapter cannot load into her GGUF llama-server, so wiring it in would have needed a serving-stack switch — moot, with the adapter losing. The v1 weights were deleted on November 10, about 724MB freed; the dataset, logs, configs, test outputs, and training report were kept. Darlene herself was untouched, still on the base model.</p>
+
+<h2>The second run</h2>
+
+<p>I ordered a second attempt: fix the adapter, use both chat histories, use all sessions. The dataset was 814 rows — 590 SFT, 205 DPO, and 19 grounding question-and-answer rows — drawn from all of my chats and all 14 Antigravity sessions, scrubbed before use. The DPO rows went unused, because MLX 0.32.2 has no DPO subcommand. Training ran on the 609 usable rows.</p>
+
+<p>This run took 1,200 iterations: 400, then a resume for 800 more after a Metal out-of-memory error around iteration 410. Test loss finished at 1.627, better than the first run&#x27;s 2.682. The best checkpoint was fused into a 14GB model and served on a test port for evaluation; Darlene stayed on the base model.</p>
+
+<p>The bar was written down before the run: at least 38 of 54 held-out prompts, and no category dropping by more than one. The result was adapter 28 of 54 against base 32 of 54 — a loss on both counts. Only four prompts flipped, all from pass to fail, zero gains. The adapter had one real improvement, zero hallucinated tool calls against the base model&#x27;s eight, but its dominant failure was worse: 13 empty replies against the base model&#x27;s 4, the model&#x27;s own reasoning eating the token budget before it answered. Nothing shipped, and the base model was never displaced.</p>
+
+<p>Merging the adapter back into the base model and converting it to GGUF was also tried and was not feasible: the converted model&#x27;s perplexity was 15,463,183 against the live model&#x27;s 1.0047. The best adapter was kept for the record, not shipped.</p>
+
+<h2>The week around it</h2>
+
+<p>The training did not happen in a quiet week. On November 9, a Qwen3.6-35B model kept reloading after being killed — at 15:24, 16:05, and 16:26 — each time starving the Studio&#x27;s memory to roughly 74 to 89MB free and stalling Darlene&#x27;s endpoint. I asked whether I was being hacked. The live check said not a hack: the model process was bound to localhost only, had no active connections, and the login history showed only me. Bionic auto-loads the model, and it stays resident.</p>
+
+<p>Who called it back is my identification, not log-proven — first the laptop&#x27;s LM Link, then possibly my iPhone. The logs showed only keepalive timeouts and never named the model.</p>
+
+<p>The model directory was deleted on November 9 during the uninstall and reinstall remedy. On November 10, at my word — &quot;I also need that 35b model back&quot; — it was re-downloaded, 24.32GB plus an 858MB projector file, verified present but not loaded: download only. On November 11, after Bionic reloaded it three times in five minutes, I said, &quot;Is it spontaneously loading again? Please delete if it&#x27;s an issue.&quot; It was deleted again at about 08:55, and the follow-up check showed no models loaded.</p>
+
+<p>The Studio itself crashed and froze that evening. I shut it down to cool off and brought it back the next morning; the 06:44 checklist verified Bionic held through the reboot, Darlene was up on her own, a real completion went through, and the 35B was gone on all three checks. What caused the crash is still not established.</p>
+
+<h2>The third run</h2>
+
+<p>The third run was ordered on November 11 at 07:51, aimed at the second run&#x27;s failure modes: the empty replies, the grounding deferrals, and the unchanged skill routing. The dataset was 700 rows. The smoke test passed first — 30 of 30 iterations at sequence length 512, test loss 1.982, adapter saved.</p>
+
+<p>The full run crashed at iteration 39 of 1,200. The one retry crashed at about iteration 50 to 60. Both times the error was the same, verified in both logs: a Metal command buffer failure, &quot;Impacting Interactivity&quot; — the macOS compositor watchdog killing long GPU kernels while the Studio display is active. Loss was healthy before both crashes, validation loss falling from about 3.32 to about 2.1 — but there was no checkpoint either time. Checkpoints saved every 100 iterations, and both crashes came before iteration 100, so there was nothing to resume from.</p>
+
+<p>The decision at 09:33 on November 11 was to run the training with the display asleep. It was re-dispatched at 09:34 with checkpoints every 25 iterations instead of 100, so a crash leaves something resumable. That rerun failed again at about 10:08 — the display sleep worked (the watchdog error never fired), but a different Metal error took its place: <code>Insufficient Memory</code> at iteration 134 of 1,200, and the retry from the checkpoint failed again at about iteration 131–134. This time the checkpoints paid off: a checkpoint survives at total iteration 250, so there is something to resume from. At 10:27 ET on November 11 he tapped train at sequence length 512, and training was re-dispatched at about 10:28 as a resume run from the iteration-250 checkpoint, 950 iterations remaining, checkpoints every 25, under caffeinate — not a like-for-like continuation of the 1024 run, since sequences are truncated.</p>
+
+<p>The resume run launched at 10:30 and finished cleanly — 950 of 950 resume iterations, 1,200 of 1,200 in total, no crash, no memory error, no watchdog error, the display asleep through the whole run. Final test loss 1.614, test perplexity 5.025. The best validation loss, 1.857 at resume-iteration 700, was fused into a 14GB model and served on port 12347 for evaluation, then stopped; Darlene stayed on the base model.</p>
+
+<p>The head-to-head came back at about 12:33: adapter 28 of 54 against base 32 of 54 — the same score as the second run. The bar, at least 38 of 54 with no category down by more than one, failed on both counts. The verdict was no ship: nothing shipped, no swap, no config touched.</p>
+
+<p>The empty replies got worse, not better — 16 against the base model&#x27;s 4, up from the second run&#x27;s 13 — and that was the exact failure the third run was built to fix. Twelve were the slow kind, the model&#x27;s reasoning eating the token budget; four were new and fast, all grounding prompts answered in three or four seconds with nothing. The third run did fix some things: grounding rose from 5 of 12 to 7 of 12, no hallucinated tool calls, one wiki deferral instead of three, and two of the second run&#x27;s flipped prompts recovered. Skill routing, voice refusals, and multiturn refusals did not move. One caveat: no per-prompt flip list against the base exists, because the base model&#x27;s per-prompt scores were never saved — the comparison is the second run&#x27;s recorded 32 of 54. His next-step call landed on November 13. Qwen3.8 is the orchestrator brain, set up on the llama.cpp split and serving now on the Studio, with thinking turned off on orchestration calls. A head-to-head probe the same day put Qwen3.8 against Glimmer. Both ran about 27 tokens a second and both passed vision. Qwen3.8 passed text and JSON. Glimmer failed both, content empty, every token spent reasoning, the right answers stuck in the reasoning nobody sees. That is the slow empty-reply cause, verified live at last. The model&#x27;s reasoning eats the token budget before it answers. Turn thinking off and the slow empties stop. Glimmer stays the challenger, a retest still open.</p>
+
+<h2>What I don&#x27;t know</h2>
+
+<p>Three gaps, stated plainly. First, the November 9 Studio crash cause is still unestablished — the machine froze, I shut it down to cool off, it came back fine, and nobody has pinned down why. Second, the third run&#x27;s resumed run finished cleanly — 1,200 of 1,200 iterations, final test loss 1.614 — and the head-to-head came back at about 12:33 on November 11: adapter 28 of 54 against base 32 of 54, verdict no ship. His next-step call is decided, not open. Qwen3.8 is the orchestrator brain, serving now on the llama.cpp split with thinking turned off, and the November 13 probe verified the slow empty-reply cause. The model&#x27;s reasoning eats the token budget before it answers. What is still open is whether a sequence-length-512 result can fairly be compared with the second run&#x27;s 1024, since the sequences were truncated and no per-prompt flip list against the base exists, and whether Glimmer earns its retest. Third, the 35B reload caller was my identification, not log-proven: the logs showed only keepalive timeouts and never named the model.</p>
+
+<h2>Verdict</h2>
+
+<p>Three runs, three different endings, same bottom line: nothing trained has beaten the base model on real prompts, and nothing trained has shipped. The first adapter lost 8 to 2. The second lost 28 to 32 against a bar of 38. The third finished cleanly at sequence length 512 — and lost 28 to 32, the same score, with the empty replies worse than before: 16 against the base model&#x27;s 4. Test loss kept improving — 2.682, then 1.627, then 1.614 — and the adapters kept losing anyway. A falling loss curve is not a better assistant. The head-to-head test is the gate, the bar is written down before the run, and Darlene stays parked on the base model until an adapter clears it.</p>
+
+<p><em>All images on this page are illustrations generated for this article unless otherwise credited.</em></p>
+  </article>
+  <p><a href="/">← All builds</a></p>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 D'Vaughn House · Homelab · Run AI on your own hardware.</p>
+    <p><a href="https://blog.dvaughnhouse.com">The Dispatch</a> — research &amp; narrative writing.</p>
+  </div>
+</footer>
+</body>
+</html>

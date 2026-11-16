@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Key That Couldn&#x27;t Pay — Homelab</title>
+<meta name="description" content="The morning was supposed to end with a one-dollar license sold on Base. Instead, the safest key in the room turned out to be the one that could not pay at all — and that failure, proved live, was the most useful thing that happened all day.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,700,800|newsreader:400,400i,500,600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">Home<span>lab</span></a></div>
+    <nav class="site">
+      <a href="/">Builds</a>
+      <a href="/about.html">About</a>
+      <a href="https://blog.dvaughnhouse.com">The Dispatch</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="post">
+    <h1>The Key That Couldn&#x27;t Pay</h1>
+    <p class="meta">by D'Vaughn House</p>
+    <p><em>The morning was supposed to end with a one-dollar license sold on Base. Instead, the safest key in the room turned out to be the one that could not pay at all — and that failure, proved live, was the most useful thing that happened all day.</em></p>
+
+<h2>The morning&#x27;s plan</h2>
+
+<p>Monday, November 9, started with a clean plan. The morning work block, ten to noon, was checkout plus the agent end to end: one real license, one dollar, settled on Base through the multi-party signing service.</p>
+
+<p>By 10:12, a limited key had been added on-chain for the demo account: it could call one method, <code>sign</code>, on the signer contract, and spend at most one NEAR. It was also the key that could not pay.</p>
+
+<h2>One yocto</h2>
+
+<p>The problem was the deposit, not the key&#x27;s permissions. Every live <code>sign</code> call needs a deposit of one yoctoNEAR, the smallest possible amount. What nobody had verified, until that morning, was whether a limited key is even allowed to attach a deposit to its call.</p>
+
+<p>It is not. The live test, run between 11:10 and 11:20, failed with the protocol&#x27;s own answer: <code>DepositWithFunctionCall</code>. A function-call key cannot attach any deposit at all — not a large one, not one yoctoNEAR. The hole was in the protocol, not in our code: the limited key could never complete a live <code>sign</code> call.</p>
+
+<p>The deposit is a compile-time constant — one yoctoNEAR — because the signer runs version 3.17.0 and the view that used to report it was removed in version 2.</p>
+
+<p>So the careful key was set aside, still on-chain, still unused, and the app&#x27;s key was swapped to the account&#x27;s FullAccess key, which already lived on the same machine; the account holds 1.32 NEAR. A live test sign with the full key succeeded, on a dummy payload only — no Base transaction, no license recorded.</p>
+
+<h2>The page that forgot its own token</h2>
+
+<p>While the key was being sorted out, the checkout broke in a way that looked like user error. The quote request came back with &quot;CSRF token mismatch.&quot; It was not. The page template had no CSRF-token meta tag in it at all, so the checkout code read an empty token and sent an empty header, and the server rejected it with a 419. The tests had never caught it, because the test suite bypasses that check entirely. The bug was in the app, not in anything the buyer did.</p>
+
+<p>The fix was one line: the missing tag, added to the template, the cached views cleared, and the token verified rendering live on the checkout page. The tests stayed green, fourteen out of fourteen — tests that had never submitted a real quote through a real browser page.</p>
+
+<h2>The wrong rail, then the right quote</h2>
+
+<p>The first license of the morning, created about 11:20, was quoted on the wrong rail entirely: NEAR instead of Base, 0.279 wNEAR to a NEAR deposit address. It was left unpaid to expire on November 12. No money moved, and the relayer&#x27;s nonce stayed at zero.</p>
+
+<p>The next two licenses, the Base ones, stuck differently. They sat pending with no deposit address, because the quote service answered 400: &quot;tokenIn is not valid.&quot; The interface was sending the origin asset in its <code>erc20</code> form; the live quote service only accepts the <code>nep141</code> form.</p>
+
+<p>The fix was a small normalizer added to the quote request, translating the asset&#x27;s label from one form to the other. The first retry still failed — the running queue workers still had the old code loaded — but after the workers were restarted both quotes succeeded, at 1.012526 USDC each. Pay the third license only; the second was a duplicate. Nothing had been paid as of 11:43.</p>
+
+<p>Before any of that, the buyer had swapped $1.20 of ETH to USDC inside his chat wallet, which then held 1.475991 USDC on Base; the checkout&#x27;s Base option is USDC only, not ETH.</p>
+
+<h2>Seamless, or nothing</h2>
+
+<p>That was the moment the brief changed, at 11:42, in his words. He said that for a NEAR build the flow needs to be seamless, that he had never been told it would be multiple steps, and that the goalpost had moved after he had been told it was possible. The multi-step flow had never been disclosed to him upfront. His decision: build the seamless version first, and let the demo video wait.</p>
+
+<p>Seamless means exactly what it sounds like: connect a wallet on the page, click Buy, approve once. No copied deposit address, no separate swap, no second app. The work order written that morning was frontend-only, built on the injected wallet in the browser, for MetaMask and Coinbase Wallet — no new wallet-connect service, no new accounts, no new project IDs — and there would be no live paid purchase, on his call.</p>
+
+<p>One more wrinkle: the chat wallet holding his USDC cannot connect to websites at all. Before the seamless demo can be recorded, his USDC plus a little ETH for gas has to move to MetaMask or Coinbase Wallet. Moving money is his step, and his alone.</p>
+
+<h2>The commit that closed the loop</h2>
+
+<p>The seamless checkout was built that same afternoon and verified independently: the wallet library pinned, a new wallet helper written, the checkout page doing Connect, then Buy, then Pay with the exact quote amount. Tests fourteen of fourteen, contract tests four of four, build clean. A click-through produced a live quote, license number four, again at 1.012526 USDC. No payment was broadcast; the deposit balance and the relayer nonce stayed at zero.</p>
+
+<p>The next evening, November 10, at 23:05, that work went to the main branch as commit 7528818. Checking it caught one more gap: the settlement script had been left untracked, so a fresh copy would have had a broken settle path. A second order that night committed that script — 458 lines — as e9ef020, verified tracked on the main branch. The settle path is whole now.</p>
+
+<h2>The dollar lands</h2>
+
+<p>Five days later, November 14, the dollar landed. His 1.012526 USDC payment completed the swap leg — one dollar out, $0.007726 refunded — and License #18 settled on Base. The receipt came back clean, the license-recorded and scholar-credited events verified on-chain, the proof hash matching the record.</p>
+
+<p>It did not land cleanly. The page stuck on &quot;signing&quot;: the swap service returns hashes as objects, not strings, and the watcher crashed; then the settler found no node. Both were fixed live — a flattener for the hashes, the node binary pinned by path — the worker stopped so the settler&#x27;s five-attempt counter froze at three. Attempt four succeeded.</p>
+
+<p>The fixes are not committed yet: the proof is on-chain, the code still uncommitted. The key that could not pay taught us what the protocol allows. Saturday taught us: the dollar can land. It did.</p>
+
+<p><em>All images on this page are illustrations generated for this article unless otherwise credited.</em></p>
+  </article>
+  <p><a href="/">← All builds</a></p>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 D'Vaughn House · Homelab · Run AI on your own hardware.</p>
+    <p><a href="https://blog.dvaughnhouse.com">The Dispatch</a> — research &amp; narrative writing.</p>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Check That Wrote: Why I Verify by Reading Back — Homelab</title>
+<meta name="description" content="Late one evening, the step I ran to confirm a record created a second one — and the fix took less than a minute, but the lesson stuck around.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,700,800|newsreader:400,400i,500,600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">Home<span>lab</span></a></div>
+    <nav class="site">
+      <a href="/">Builds</a>
+      <a href="/about.html">About</a>
+      <a href="https://blog.dvaughnhouse.com">The Dispatch</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="post">
+    <h1>The Check That Wrote: Why I Verify by Reading Back</h1>
+    <p class="meta">by D'Vaughn House</p>
+    <p><em>Late one evening, the step I ran to confirm a record created a second one — and the fix took less than a minute, but the lesson stuck around.</em></p>
+
+<p>I run a dashboard where I keep track of work: what has been checked, what is ready, what is still waiting. It only works if the dashboard tells the truth — if a record says a piece of work passed its check, I need to trust that it means what it says, and that there is exactly one of it.</p>
+
+<p>Late one evening in October, I was recording that a batch of finished pieces had passed their check and were bound for the next check. The original entry went in cleanly. Then I did what I always do after a step like that: I checked my work. Only this time, the check itself did something I did not expect. The command I ran to confirm the post created a second record — a duplicate of the one I had just made.</p>
+
+<p>Nothing was broken. Nothing was lost. I caught it, deleted the duplicate in the same minute, and checked that only the original remained. The whole incident lasted about as long as it takes to notice a typo — and yet it is the incident I think about most when I verify anything, because it broke an assumption I had never examined: that checking is harmless.</p>
+
+<h2>Checking is not always harmless</h2>
+
+<p>We treat verification as the safe part of the job. The risky part, in our heads, is the change itself — the edit, the publish, the deploy. Verification comes after, and it feels like standing outside the room looking in. You are not touching anything. You are just making sure.</p>
+
+<p>That is not always true. Some ways of checking reach into the room. A command that confirms a post by creating something, a script that logs its own run as a new entry, a test that writes its result into the same list it is measuring — all of these change the thing they are supposed to be observing. And once the check has written, you have a new problem that did not exist before you checked: now there are two records where there should be one, and anyone reading the dashboard later has to guess which one is real.</p>
+
+<p>The duplicate I made that evening was easy to spot and easy to delete. That was luck, not design: a quiet evening, a short list, and I was looking right at it. On a busier night a duplicate could sit there for days, get counted, or get built on. The damage from a bad check is rarely dramatic. It is a count off by one, an entry nobody remembers making, a small doubt about whether the record can be trusted at all. Doubt is the real cost.</p>
+
+<p>There is a second, subtler problem. A check that writes gives you a false sense of success: something appears, and it looks like confirmation. But what you confirmed is not the original record. You confirmed that your command can create things — a different question from whether the original record is there, correct, and alone. A check that answers the wrong question while looking like it answered the right one is worse than no check at all, because it lets you walk away satisfied.</p>
+
+<h2>The rule</h2>
+
+<p>So the rule I wrote down the next day is short, and I keep it short on purpose: a check that writes is not a check. Verify by reading back only.</p>
+
+<p>Reading back means going to the record itself, separately from whatever created it, and looking at what is actually there — not running the creation step again, not asking a tool to re-do the work. Read what exists, compare it against what should exist, and count. If the count moved when it should not have, something wrote when it should only have read, and that is the signal to stop and look.</p>
+
+<p>The separation matters. The step that creates a record and the step that confirms it should be two different actions. When they are the same action, you can never tell whether you are looking at the original or at the echo of your own check. When they are separate, the confirmation means something: an independent look found the record standing alone.</p>
+
+<p>I apply this in a small, boring way, and boring is the point. I post once. Then I stop, and I read the entry itself, not a summary of it. I check that there is one of it, not two. If the number changed between the post and the read, I do not explain it away — I treat the change as the finding. The next day, when I posted the next result the same way, the read-back came back clean: one post, no duplicate. That is not a triumph. It is just what the routine is supposed to produce.</p>
+
+<h2>What the rule does not do</h2>
+
+<p>I want to be plain about the limits, because a rule that sounds airtight is usually being oversold. This rule does not make the mistake impossible. It is a discipline, not a lock on the door. Nothing in the setup stops me from running a writing command when I meant to run a reading one; the rule only makes the mistake recognizable the moment it happens, because the read-back will show a record that should not be there. The responsibility still sits with the person running the check. I have to choose the read-only step, every time, even when the writing step is closer to hand or already typed out.</p>
+
+<p>It also does not fix anything retroactively. Reading back tells me the state of the board now, not whether an old entry got there cleanly, and it does not repair a list that has quietly accumulated duplicates for weeks. If you suspect that, the honest move is to say so and go through the list by hand, not to run a new check and declare the past verified.</p>
+
+<p>But within those limits, the rule has held up, because it is easy to remember when it matters. Most verification failures are not failures of cleverness. They are failures of habit: reaching for the nearest command instead of the right one, trusting a good-looking result without asking what the command actually did. A rule you can say in one sentence survives a tired evening in a way a checklist page does not. Before you run anything, pause and ask: will this step change what I am trying to look at? If the answer is yes, it is not the check. Put it down, and read instead.</p>
+
+<p>That is the whole discipline. Post once. Read back. Count. And never let the act of verifying become another thing that needs verifying.</p>
+
+<p><em>All images on this page are illustrations generated for this article unless otherwise credited.</em></p>
+  </article>
+  <p><a href="/">← All builds</a></p>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 D'Vaughn House · Homelab · Run AI on your own hardware.</p>
+    <p><a href="https://blog.dvaughnhouse.com">The Dispatch</a> — research &amp; narrative writing.</p>
+  </div>
+</footer>
+</body>
+</html>

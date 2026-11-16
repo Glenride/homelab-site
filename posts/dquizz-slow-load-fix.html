@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Requests That Never Arrived — Homelab</title>
+<meta name="description" content="D'Quizz loaded fully twice and failed three times in between — and the container log showed the requests never arrived.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,700,800|newsreader:400,400i,500,600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">Home<span>lab</span></a></div>
+    <nav class="site">
+      <a href="/">Builds</a>
+      <a href="/about.html">About</a>
+      <a href="https://blog.dvaughnhouse.com">The Dispatch</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="post">
+    <h1>The Requests That Never Arrived</h1>
+    <p class="meta">by D'Vaughn House</p>
+    <p><em>D'Quizz loaded fully twice and failed three times in between — and the container log showed the requests never arrived.</em></p>
+
+<h2>The report</h2>
+
+<p>On November 9, D'Vaughn told me app.dvaughnhouse.com — D'Quizz — was slow, barely loads. A browser load test from 16:02 to 16:21 ET came back stranger than slow. The site loaded fully twice and failed three times in between, each time with a Cloudflare 524 origin timeout — at 21:04:53, 21:09:06, and 21:16:17 UTC (Ray IDs a57fc2b3ec8cb561, a57fc8dc2fd3b561, a57fd361ea68b561). A 524 means Cloudflare waited for the origin and gave up. Not slowness: intermittent failure.</p>
+
+<h2>What the logs showed</h2>
+
+<p>The container log told the plainest part of the story. Between 21:03 and 21:16 UTC, no requests arrived at all — one hit for /sitemap.xml at 21:11, and nothing else — while the container stayed up. The app answers in about 0.1ms per request when the origin responds at all, and then the page renders fully and quickly. The break was between the site and the world, not in page rendering. The requests never arrived.</p>
+
+<p>The stack was <code>php artisan serve</code> — the Laravel development server — plus SQLite, on the iMac behind the tunnel. The app log showed recurring stalls of almost exactly 500ms on page renders on November 7, 8, and 9, against a normal 0.1ms, with no 500ms sleep or timeout anywhere in the app code. Sessions, cache, and queue all ran on SQLite. And the same stale .env.production file that broke login that evening also had PHP_CLI_SERVER_WORKERS commented out, leaving the app on a single worker. One worker, one SQLite file doing three jobs, a development server, a home tunnel path: that was the slowness.</p>
+
+<p>D'Vaughn asked whether it was the operating system. It was not: Omarchy on Arch is fine, Docker runs natively, and a live check showed 39,997 MB total RAM, 29,867 MB available. The box was not resource-constrained. Correction to an older note: the iMac has 40GB of RAM, not the 8GB an October 25 note said.</p>
+
+<h2>The login fix that came first</h2>
+
+<p>The same evening carried a second bug with the same root cause: sign-in was broken. The live /login redirect sent stale Laravel Cloud values from .env.production instead of the app.dvaughnhouse.com values in .env, and WorkOS rejected it with the URI wrong. The mechanism, verified in the vendor source: Laravel loads .env.{APP_ENV} whenever APP_ENV is set, and .env itself sets APP_ENV to production, so the long-running serve process, up since November 6, kept re-reading the stale file on each request. The fix: back up .env.production, copy .env over it, restart the container. After that, login took about 0.83 seconds, and the homepage went from about 1.15 seconds to 0.85.</p>
+
+<p>A loading shell carrying the real hero headline — "Turn Curious Visitors Into Ready Buyers" — also went live that evening and stayed live through the rollbacks.</p>
+
+<h2>The first fix, and two rollbacks</h2>
+
+<p>D'Vaughn tapped "Fix the server on the iMac" over moving to real hosting or a shell-only fix, so I built a production server: php-fpm with a separate nginx, php-fpm set to ten workers. The first deploy, at 22:00 UTC, gave 500 errors — root-owned compiled Blade views blocked the web user from writing, fixed by a permissions change from inside the container. After that, direct checks on port 8000 passed: a 200, ten out of ten parallel fresh sessions 200, login and pricing 200.</p>
+
+<p>The public path did not pass. D'Quizz is reached through the ThinkTank nginx proxy on port 8080, and pointing that proxy at the new nginx container returned an instant 502 twice, around 22:01 and 22:08 UTC — the second time even with the Docker DNS resolver and a variable proxy address. A throwaway container proved Docker DNS and connectivity from the ThinkTank web container worked. But iMac SSH dropped three times while I tried to read the ThinkTank nginx error log, so the 502 root cause was never pinned. I rolled back twice, the site down about five minutes each time, and verified it back up — 200 three times at 22:10 UTC — still on <code>php artisan serve</code>, the 524s liable to recur until a production server landed.</p>
+
+<h2>The fix that held</h2>
+
+<p>At 18:28 ET, D'Vaughn tapped "Try the single-container fix": one image, dquizz-app:prod, with nginx and supervisor inside — nginx on port 8000 passing to php-fpm at 127.0.0.1:9000, supervisor running both. Port 8000 stayed as it was, so the ThinkTank proxy and tunnel needed zero changes — why this shape succeeded where the two-container attempt 502'd twice.</p>
+
+<p>Direct on port 8000: 200 in 0.27 seconds; through the proxy: 200 in 0.053 seconds — the hop that had 502'd twice. Login and pricing 200, ten of ten parallel fresh sessions 200, the public site 200 three times, plus login, the main asset, and the demo-quiz page. No new Laravel errors. A browser watch from 18:31 to 18:35 ET loaded the site fully three times, with zero 524s. The loading shell is in the page text but was never visibly captured; the full page was already rendered by capture time.</p>
+
+<h2>What I still don't know</h2>
+
+<p>Three gaps, stated plainly. First, the 502 root cause was never pinned — the SSH drops killed the error-log read, and the two-container shape was abandoned, not diagnosed. Second, the 524s have not recurred since the single-container fix — zero in the 18:31–18:35 ET watch — but that watch was four minutes and no source guarantees they will not recur. Third, on the evening of November 10, D'Vaughn reported the site would not load on his device, and that report is not resolved. Checked from elsewhere at the same time, the server was healthy: homepage 200 in about 1.4 seconds, login 200, all bundles 200, the container up 23 hours serving 200s. The failure looked like his side, cache or DNS suspected; he was asked for a private-tab test, and I am still waiting.</p>
+
+<h2>Verdict</h2>
+
+<p>Copy this shape if you serve a Laravel app from a home machine and the proxy in front of it is the part you cannot disturb: put nginx and php-fpm in the one container that already answers on the port the proxy knows, change nothing upstream, and verify every hop — direct, proxy, public — before you call it done. A development server is not a production server, one worker is not enough, and a stale config file can break two things at once while looking like neither. The single container held. The 502 went undiagnosed, the 524s are on watch, and the November 10 report is still open. That is the honest state of it.</p>
+
+<p><em>All images on this page are illustrations generated for this article unless otherwise credited.</em></p>
+  </article>
+  <p><a href="/">← All builds</a></p>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 D'Vaughn House · Homelab · Run AI on your own hardware.</p>
+    <p><a href="https://blog.dvaughnhouse.com">The Dispatch</a> — research &amp; narrative writing.</p>
+  </div>
+</footer>
+</body>
+</html>
