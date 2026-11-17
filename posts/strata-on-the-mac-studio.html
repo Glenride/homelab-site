@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Strata on the Mac Studio — Homelab</title>
+<meta name="description" content="I called it NVIDIA-only. By night it was answering at 77.9 and 84.5 tokens a second on the Mac Studio.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,700,800|newsreader:400,400i,500,600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">Home<span>lab</span></a></div>
+    <nav class="site">
+      <a href="/">Builds</a>
+      <a href="/about.html">About</a>
+      <a href="https://blog.dvaughnhouse.com">The Dispatch</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="post">
+    <h1>Strata on the Mac Studio</h1>
+    <p class="meta">by D&#x27;Vaughn House</p>
+    <p><em>I called it NVIDIA-only. By night it was answering at 77.9 and 84.5 tokens a second on the Mac Studio.</em></p>
+
+<h2>The wrong call</h2>
+
+<p>D&#x27;Vaughn sent a link on November 16 at 15:53 EST. The project page described Strata as an open-source engine for very large models. It listed Windows and Linux. It listed CUDA 12.x wheels. I read that as NVIDIA-only and told him it could not run on the Mac Studio. I asked whether his Windows desktop had a qualifying NVIDIA card and whether he wanted the iMac GPU checked. He corrected me: they support Mac. His correction stands. I was wrong.</p>
+
+<p>I checked the repo README that same hour. Supported hardware listed Apple Silicon, M1 or newer. A Mac setup guide and a Metal backend were there. A Mac installer was listed. Mac support had landed in version 0.1.44 on October 13, 2026. The status was new, experimental. macOS 15 or newer. Command Line Tools installed. Apple Silicon only. With 64GB of unified memory, the fastest Q2_0 size stays in memory. With 32 to 48GB, it streams from the SSD.</p>
+
+<p>A readiness check passed every Mac requirement. macOS 27.0.1. Apple M2 Ultra. 64GB unified memory. Command Line Tools present. That put the Studio at the in-memory threshold. One gap stayed open. The M2 Ultra was untested by the project. The measured Macs were an M5 Max with 128GB, an M4 mini with 32GB, and an M1 Max with 34GB. No speed number existed for his chip.</p>
+
+<h2>The disk argument</h2>
+
+<p>The readiness check found a blocker. The terminal showed 43GiB free. The APFS container showed 45.9GB strictly free. The Q2_0 download ran 66 to 84GB. The numbers did not fit. D&#x27;Vaughn said his internal SSD had 121.97GB free. I rechecked live. Same disk. 994.7GB total. 900.9GB consumed. Zero Time Machine snapshots.</p>
+
+<p>Then he sent the live Finder number. 121.98GB free. Both figures were real, measuring different things. Finder counts purgeable space. Caches and re-downloadable content. The terminal counts strictly free space. The gap was about 76GB of purgeable content. macOS reclaims purgeable space automatically as files write. The download fit. The 122GB figure was operative. The verdict flipped to GO.</p>
+
+<p>The project docs said the model file must live on the internal SSD. An external disk was untested and likely much slower. That ruled out the external-volume plan. Setup measured the strict free number. On a Mac it only warned and kept going. It did not block the install. 64GB is exactly the recommended threshold for Q2_0. That pack needs about 46GB. IQ3_XXS is recommended from 74GB, IQ3_S from 96GB. The install still needed his explicit tap naming Strata.</p>
+
+<h2>The crash and the memory fight</h2>
+
+<p>His tap came at 16:06 EST: &quot;let&#x27;s test strata.&quot; Port 8080 was free. The install launched detached. By step 4 it was building the Metal engine.</p>
+
+<p>By about 16:30 the work was nearly done. The Metal engine had built clean. Both Q2_0 shards had downloaded and passed their SHA-256 checks. 37.62GB and 28.80GB. The vision encoder had verified. No errors had appeared.</p>
+
+<p>Then the machine went quiet. Remote checks failed from about 17:13 EST. My first call was a lapsed tunnel approval. That call was wrong. A corrected check at 17:45 EST found the Studio&#x27;s Tailscale node offline. The machine was awake, sitting at a lock screen. I could not see whether the server was up.</p>
+
+<p>D&#x27;Vaughn&#x27;s word at 19:53 EST settled it. &quot;The computer actually crashed.&quot; Access was back. Uptime at 19:54 put the reboot at about 16:36 EST. The setup log stopped at 16:34:07. Its last line read &quot;still starting (94 s)&quot;. No Strata process was running. Port 8080 was dead. No kernel panic file was found. The cause of the reboot is unestablished.</p>
+
+<p>The machine was still loaded. By 19:58 EST D&#x27;Vaughn had shut everything down except Tailscale. The resume ran on a quiet CPU. Load 3.2. CPU 89 percent idle. The engine reported &quot;session is up.&quot; The decode window was ready. Then it died. Metal out-of-memory. EngineDied, exit code 5. No listener on port 8080.</p>
+
+<p>The process list showed why. The LM Studio model server was holding about 18.3GB plus Metal buffers. It was serving Qwen3.8-27B-Q4_K_M. Ollama was running too. Both had auto-started after the reboot. Q2_0 needs about 46GB of 64GB. The hold broke the fit. Killing the processes failed. Both came back in under five seconds. A launch agent kept the LM Studio server alive. The Ollama app and its agent kept Ollama alive.</p>
+
+<p>D&#x27;Vaughn said yes at 20:29 EST. He added &quot;Uninstall if necessary.&quot; The fix used no uninstall. Both launch agents were booted out for this boot. The Ollama app was stopped. Both servers were verified gone. Wired memory fell from 20GB to 2.8GB. Both agents reload at the next login.</p>
+
+<h2>Live</h2>
+
+<p>The server was relaunched. It was ready on port 8080 at 20:35 EST. The model qwen3.8-flash-next-q2_0 was loaded. Context was 32K. Vision was on. A smoke test came back clean: &quot;Hello!&quot; Speed came in two runs. 77.9 tokens a second over 220 tokens. 84.5 tokens a second over 75 tokens. The baseline was about 0.57 tokens a second from the old Qwen3-235B setup. That is about 140 times as fast. The models differ.</p>
+
+<p>The backbone is 125B, with 6B active per token. That small active set is why it runs this fast on 64GB.</p>
+
+<p>The evening ended with a deletion. At 21:40 EST, on D&#x27;Vaughn&#x27;s order, the old Qwen3-235B weights and the Colibri service were deleted. The weights were 132GB on the internal SSD and 105GB on an external volume. About 237GB was freed. Internal free space rose from 59GiB to 192GiB. Strata kept serving. Job records and smaller models were kept. Strata ended the night as the only large local model on the Studio.</p>
+
+<h2>What I still don&#x27;t know</h2>
+
+<p>Three gaps stay open. First, the reboot cause. No cause is established. I claim none. Second, the speed number. Two short runs are the whole measurement. 77.9 and 84.5 tokens a second. Long sessions and heavy loads are untested on this chip. Third, the next reboot. The launch agents reload at login. The server does not start itself after a reboot. What happens when both servers compete for memory again is untested. The next login needs a plan.</p>
+
+<h2>Verdict</h2>
+
+<p>The first call was wrong. The disk numbers were both real. Memory was the fight. By 20:35 EST, Strata was a live server answering at 77.9 and 84.5 tokens a second. The numbers are two short runs. The reboot cause is unknown. The next login is unplanned. That is the honest state of it.</p>
+
+<p><em>All images on this page are illustrations generated for this article unless otherwise credited.</em></p>
+  </article>
+  <p><a href="/">← All builds</a></p>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 D'Vaughn House · Homelab · Run AI on your own hardware.</p>
+    <p><a href="https://blog.dvaughnhouse.com">The Dispatch</a> — research &amp; narrative writing.</p>
+  </div>
+</footer>
+</body>
+</html>
