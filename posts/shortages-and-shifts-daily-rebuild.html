@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Tracker That Rebuilds Itself Every Morning — Homelab</title>
+<meta name="description" content="Shortages &amp; Shifts rebuilds its drug shortage record every morning from public sources. One failed Pfizer pull showed what the rebuild does when a source will not answer.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,700,800|newsreader:400,400i,500,600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">Home<span>lab</span></a></div>
+    <nav class="site">
+      <a href="/">Builds</a>
+      <a href="/about.html">About</a>
+      <a href="https://blog.dvaughnhouse.com">The Dispatch</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="post">
+    <h1>The Tracker That Rebuilds Itself Every Morning</h1>
+    <p class="meta">by D&#x27;Vaughn House</p>
+    <p><em>Shortages &amp; Shifts rebuilds its drug shortage record every morning from public sources. One failed Pfizer pull showed what the rebuild does when a source will not answer.</em></p>
+
+<h2>One page, two feeds</h2>
+
+<p>The Monday digest tells the weekly story. Shortages &amp; Shifts carries the daily listings. I treat them as one record on two surfaces. I do not claim they share a machine or a pipeline.</p>
+
+<p>The tracker lives at drugs.dvaughnhouse.com. It covers shortages, approvals, layoffs, and hiring. Every entry links to its public source. Figures are for research and citation only, no clinical guidance.</p>
+
+<p>The build started November 11, 2026. Six sources were checked live that day. FDA shortages: buildable. ASHP: manual curation. FDA approvals: buildable, with lag. WARN: mixed by state. Workday: Pfizer only. Layoff news: manual curation.</p>
+
+<p>The first full pull ran November 11: 1,586 presentation records. Each is one drug, maker, and package. The split was 1,114 Current, 413 To Be Discontinued, 59 Resolved. Grouped by drug name, Current came to about 68 drugs. The two must never swap places.</p>
+
+<p>The same run found one qualifying new drug approval in a 14-day window: AXYCIS, approved October 29, 2026. By evening the scope had widened to three labeled groups. The November 11 evening count was 61 approvals: 1 new drug, 51 supplements, 9 generics.</p>
+
+<p>ASHP stood at 192 current entries as of November 11, hand-verified. Layoffs totaled 10 entries: 8 from New Jersey, 2 from California. Pfizer hiring stood at 724 open jobs. Phase 0 had read 725 about 20 minutes earlier.</p>
+
+<h2>The morning rebuild</h2>
+
+<p>A daily job runs at 08:00 Eastern. It was created November 11. The first run was scheduled for Thursday, November 12. First, a curator re-verifies ASHP through the reader path and updates the manual entries. The script then pulls every source fresh. The site deploys. The live page is checked for the new run time and counts.</p>
+
+<p>Each run saves a dated snapshot per source, with provenance. The next run diffs against the most recent prior snapshot. Shortage changes match by drug name and package code. The first run carried 27 duplicated identities, collapsed before diffing. Without the collapse, identical snapshots would emit phantom changes. Events enter a durable history. The page list stays a 30-day window.</p>
+
+<p>Approvals upsert by application, submission type, and submission number. A late record lands once, with its true FDA date. The hiring delta needs two successful runs. California restarts each July. The script treats the restart as a new baseline, never as mass deletions.</p>
+
+<p>At first the script touched only the data file. Design survived every rebuild. The November 11 and 12 interface deploys left the data file byte-identical. On November 15 the rebuild gained a rendering step. Each run now renders the served page and sitemap from a template. A render failure aborts the run and publishes nothing. Design lives in the template.</p>
+
+<h2>When a pull fails, nothing new goes out</h2>
+
+<p>If a required pull fails, nothing is written. The last good data stays live. No snapshot is created. No zero stands in for a missing total. Writes swap in from a temporary file. A short FDA pull fails the run. Fewer records than the API total never publishes.</p>
+
+<p>Required means FDA shortages, FDA approvals, Pfizer, and valid manual entries. An ASHP date more than 7 days old, or in the future, fails the run. California is the one exception. If California fails alone, the data is written without California rows. California is marked unverified, never zero.</p>
+
+<p>November 14 proved the rule. The 08:00 run failed at the fourth of five legs. The Pfizer request returned a response that was not JSON. Twice. Each attempt carried a 60-second timeout. ASHP stood at 193, fresh that day, FDA shortages at 1,580 records, approvals at 79 in the window. California never ran. November 13 data stayed live.</p>
+
+<p>It looked like a transient block or challenge page. On November 11 the first probe timed out at 30 seconds. The retry succeeded in about 2 seconds. The script carries a 60-second timeout and one retry. On November 14 both attempts failed.</p>
+
+<p>A one-time retry ran about 12:36 Eastern. It succeeded and deployed. Generated 12:36:57 Eastern, November 14. Counts: 1,114 Current, 407 To Be Discontinued, 59 Resolved. ASHP: 193. Pfizer: 694 open jobs, down 20 from the prior successful snapshot. Approvals: 85. Layoffs: 10. California checked out. Transient in effect. The retry proved it passed, nothing about the cause.</p>
+
+<p>Readers saw November 13 data for a few hours. They never saw a fresh date on stale numbers.</p>
+
+<h2>The honest edges</h2>
+
+<p>Shortage entries link to the openFDA query. I found no verified pattern for a per-drug FDA page.</p>
+
+<p>Approvals lag. OpenFDA lagged brand-new original approvals by 2 or more days on November 11. November 9 and 10 novel approvals were still absent November 11. The 14-day window catches them. Each entry shows its FDA action date, never the ingest date.</p>
+
+<p>California matching is exact. The name list held 35 entries on November 11, 34 match keys after normalization. Johnson and Johnson Services, Inc. does not match. Off-list rows are reported, never added silently. The workbook index sheet names Tuesday and Thursday. The EDD page stated no cadence. The tracker page carries no cadence line for California.</p>
+
+<p>ASHP has no feed, no public API, and no download file. Direct requests returned 403. The count is hand verified through the reader path, with provenance. An ASHP figure older than 7 days is refused. The page shows the date beside the count and warns if the file ages past 7 days.</p>
+
+<p>New Jersey dates are month only. The tracker records the first of the posted month. Unstated effective dates stay blank, never inferred. Layoff news needs exact headcounts, never percentages. The official California row for Crinetics replaced the tracker entry: 78 workers, notice November 3, 2026, effective January 4, 2027.</p>
+
+<p>Hiring covers Pfizer only. Others need their own tenant and site discovery first. Ohio and New York WARN notices stay manual. The Ohio index returned 404 on November 11. New York uses a Tableau dashboard with no clean feed. The U.S. Department of Labor states it keeps no WARN database.</p>
+
+<h2>What stays open</h2>
+
+<p>I found no separate audit entry for the November 12 or 13 rebuilds. The job runs silent on clean runs. November 13 data is known only because the November 14 failure record names it as last good. I state the gap.</p>
+
+<p>The November 14 cause stays unproven. Phone layout was verified at emulated widths only. A real phone glance was still owed after the November 12 rebuild. The per-drug page pattern stays unverified.</p>
+
+<p>That is the machine. Fresh data each morning. Honest old data when fresh data fails. Gaps left visible.</p>
+
+<p><em>All images on this page are illustrations generated for this article unless otherwise credited.</em></p>
+
+  </article>
+  <p><a href="/">← All builds</a></p>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 D'Vaughn House · Homelab · Run AI on your own hardware.</p>
+    <p><a href="https://blog.dvaughnhouse.com">The Dispatch</a> — research &amp; narrative writing.</p>
+  </div>
+</footer>
+</body>
+</html>
