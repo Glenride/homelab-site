@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Mailers That Kept Dying (Until the Watchdog Learned to Fix Them) — Homelab</title>
+<meta name="description" content="Two password-reset mailers broke twelve times in a single day. The fix that stuck was a watchdog that repairs them without waking anyone up.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,700,800|newsreader:400,400i,500,600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">Home<span>lab</span></a></div>
+    <nav class="site">
+      <a href="/">Builds</a>
+      <a href="/about.html">About</a>
+      <a href="https://blog.dvaughnhouse.com">The Dispatch</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="post">
+    <h1>The Mailers That Kept Dying (Until the Watchdog Learned to Fix Them)</h1>
+    <p class="meta">by D&#x27;Vaughn House</p>
+    <p><em>Two password-reset mailers broke twelve times in a single day. The fix that stuck was a watchdog that repairs them without waking anyone up.</em></p>
+
+<h2>What the mailers do</h2>
+
+<p>Two small loops send the password-reset emails for Mission Control and Bot HQ. One loop per site. Each loop runs as a systemd unit. Each one polls for new reset tokens and sends a one-hour link that works once. The tokens wait in D1 until the loop picks them up.</p>
+
+<p>When a loop is dead, the reset email never goes out. The token still gets created. It sits in the queue with its email unsent. Nothing is lost. The email is just late. Before November 13, a dead mailer waited for the nightly review to reinstall it. That wait ran up to about a day.</p>
+
+<p>An October 22 flag had warned the mailers were down. On October 23 the check confirmed it. Both unit files were gone. No processes were running. The journals held nothing. The mailers had been breaking since then, in the same way, over and over.</p>
+
+<h2>The machine kept getting replaced</h2>
+
+<p>The machine these units run on gets replaced out from under them. Each replacement wipes the directory that holds the service definitions. The unit files vanish. Both units go inactive. Password resets stop until something puts the files back.</p>
+
+<p>By November 13, the count stood at ten wipes. That was the day the durable fix went in. The repairs kept coming anyway. I counted the repairs in the log before writing this. November 14 needed twelve: 00:18, 02:18, 04:18, 06:18, 08:53, 11:08, 13:08, 15:08, 16:49, 18:54, 20:54, and 22:49. November 15 needed twelve: 00:49, 02:54, 04:49, 07:54, 10:14, 11:54, 12:59, 14:15, 18:20, 20:00, 20:55, and 21:10. The 12:59 break came about an hour after the 11:54 repair. Five wipes landed in about six hours across the evening of November 15 and the early morning of November 16. November 16 added six more before the upgrade: 00:20, 02:15, 04:20, 06:20, 08:15, and 10:15.</p>
+
+<p>Every repair followed the same steps. The repair script put both unit files back from the canonical copies. It reloaded systemd. It started both units. Then came the verification: both units active, one loop process each, clean starts in the journals. Every logged repair ended active and active. The repair worked. It just had to run again and again.</p>
+
+<p>I do not know why the machine gets replaced this often. The log records the wipes. It does not record a cause for the replacements. The diagnosis of the wipe frequency is still owed. The rest of this piece is about living with the pattern. Living with it does not explain it.</p>
+
+<h2>The durable fix, honestly</h2>
+
+<p>The durable fix went in on November 13, on D'Vaughn's order. It has three parts. Canonical copies of both unit files live in the home directory, which survives a replacement. A repair script reinstalls any missing or changed unit file, reloads systemd, and starts only what needs starting. A healthy unit is never restarted. A watchdog hook polls every five minutes and wakes an agent when it finds a break. The nightly review still checks both units as a backstop.</p>
+
+<p>The script was tested the day it went in. On healthy units it did nothing. With both units stopped and both unit files removed, it put both back and both came up active. Run again, it did nothing. A per-unit test repaired one mailer and left the other untouched. The hook's dry runs were checked too. Silent when healthy. Wake when broken. Silent again after repair.</p>
+
+<p>One wrong idea needs clearing up. On the morning of November 16, a check-in described the durable fix as user-level units, owed since October 24. That framing was stale. User-level units had been tried on October 23 and disproven the same day. This machine has no user bus. The guest boots a minimal target. It never starts a login session. The stale unit files were removed on November 13 so nothing would suggest they work. The durable fix since November 13 was the canonical copies, the repair script, and the hook. The November 16 change did not resurrect user units. It removed the wait for an agent.</p>
+
+<p>The script also checks for a runtime-provided config file it needs, and it does not manage that file. If the file is missing, the script fails loudly. It does not pretend success.</p>
+
+<h2>The watchdog learned to fix it</h2>
+
+<p>At 11:43 EST on November 16, D'Vaughn tapped an order to reset the mailers and apply the durable fix. Both mailers were verified healthy first. Neither was restarted. Then the hook was rewritten. On a live poll, a broken state now triggers the repair inline. The hook runs the repair script, checks again, and stays silent when the repair works. It wakes an agent only when the repair fails or the state stays broken. It wakes at most once every thirty minutes per broken spell. It reports to D'Vaughn only when a repair fails.</p>
+
+<p>The live test was direct. The Bot HQ unit was stopped. Its unit file was removed. Systemd was reloaded. Then a live hook run found the break, ran the repair, and both units came back active. The decision was silent. No agent was woken. The healthy Mission Control unit was never restarted. Each unit ran exactly one loop process.</p>
+
+<p>At 05:25 on November 17, the hook proved itself again. Another machine replacement had wiped the unit files. The hook reinstalled both units on its own. No agent was woken. A nightly review check found both units active, with no repair needed from the review itself.</p>
+
+<h2>Verdict</h2>
+
+<p>Copy this shape when a machine can be replaced under your services. Keep canonical copies where a replacement cannot reach them. Make the repair idempotent, so running it on a healthy system does nothing. Verify both services active after every repair, with one process each. Then let the watchdog do the repair itself, and wake an agent only on failure. The mailers still break. The difference is that nobody has to notice anymore. The wipe-frequency diagnosis is still owed, and the replacements are still coming. The watchdog answers them without the wait for an agent.</p>
+
+<p><em>All images on this page are illustrations generated for this article unless otherwise credited.</em></p>
+
+  </article>
+  <p><a href="/">← All builds</a></p>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 D'Vaughn House · Homelab · Run AI on your own hardware.</p>
+    <p><a href="https://blog.dvaughnhouse.com">The Dispatch</a> — research &amp; narrative writing.</p>
+  </div>
+</footer>
+</body>
+</html>
