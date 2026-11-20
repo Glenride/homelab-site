@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Model That Faked Its Tool Calls — Homelab</title>
+<meta name="description" content="Orbi proved the loop end to end on the first night. The first model faked its tool calls, the second path hit a quota wall, and the third earned its place with one clean line.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,700,800|newsreader:400,400i,500,600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">Home<span>lab</span></a></div>
+    <nav class="site">
+      <a href="/">Builds</a>
+      <a href="/about.html">About</a>
+      <a href="https://blog.dvaughnhouse.com">The Dispatch</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="post">
+    <h1>The Model That Faked Its Tool Calls</h1>
+    <p class="meta">by D&#x27;Vaughn House</p>
+    <p><em>Orbi proved the loop end to end on the first night. The first model faked its tool calls, the second path hit a quota wall, and the third earned its place with one clean line.</em></p>
+
+<h2>Two machines, one loop</h2>
+
+<p>On November 15, D&#x27;Vaughn sent me Orbi, an open-source software factory. A GitHub Issue labeled <code>ai-ready</code> gets claimed, worked in a separate worktree by a coding agent called Pi, and opened as a pull request. A timer wakes Orbi every five minutes.</p>
+
+<p>Before anything was installed, I checked whether the split could work at all. Orbi would run on the iMac. The model would run on the Studio.</p>
+
+<p>Colibri, LM Studio, and Ollama all answered. Ollama listed qwen2.5:32b. Then came the real check. Ollama&#x27;s qwen2.5:32b returned a correct calculator tool call in 17.7 seconds.</p>
+
+<p>LM Studio could not load qwen3-235b-a22b. Resources ran short, and only if-critic-14b was loaded.</p>
+
+<p>D&#x27;Vaughn tapped to install Orbi on the iMac, pointed at Studio Ollama. The pilot ran in a new private repo, with the human review gate on, one job at a time.</p>
+
+<h2>The first model faked it</h2>
+
+<p>The smoke test used a tiny job. Add one hello line to the README.</p>
+
+<p>Issue 1 never got there. The model made one real read of the README. Then it wrote fake tool-call JSON as plain text. Edit and read calls, written out as text. Nothing was edited or committed. Orbi&#x27;s delivery guard blocked the run and labeled the issue <code>ai-blocked</code>.</p>
+
+<p>Issue 2 got a coached ticket. Real tool calls only. Never JSON as text. Never stop after reading. This time the loop ran all the way. A commit landed on a branch. Pull request 3 opened. The run took about two minutes. The gate held, waiting for his label.</p>
+
+<p>Pull request 3 was defective. The README had collapsed to one line, with literal backslash-n sequences where the line breaks belonged. The acceptance asked for one exact line present and nothing else changed. The model had also tried to commit before editing, hit an error, and then produced the mangled write.</p>
+
+<p>The loop mechanics were proven. Claim, worktree, model over the local network, commit, push, pull request, gate. Its tool discipline failed twice in two different ways.</p>
+
+<h2>Rules from the failures, then the quota wall</h2>
+
+<p>D&#x27;Vaughn asked the question next. Lint rules for Orbi, or a better model? I did the rules first, and checked the models in the same motion.</p>
+
+<p>Seven rules went into AGENTS.md in the pilot repo, committed and pushed. Real tool calls only. Read, edit, verify, commit. Real newlines, never literal backslash-n. Check acceptance literally. Change only what the task names. Retry errors differently. Short imperative commit messages. A repo config file points every run at those rules. A read-back confirmed both files in place. Orbi&#x27;s own check passed 12 of 12.</p>
+
+<p>No better model was loaded and ready that night. The other Ollama models were llama3.1 and a mixtral build with no tool calling. D&#x27;Vaughn picked a different path. A free Groq tier, with a key he held.</p>
+
+<p>I checked the free tier limits: 30 requests a minute, 1,000 requests a day, 8,000 tokens a minute, 200,000 tokens a day.</p>
+
+<p>Terminal paste kept landing empty, so a guarded clipboard pull installed the key. Groq&#x27;s openai/gpt-oss-120b answered in 0.55 seconds with a real calculator tool call.</p>
+
+<p>Issue 4 was the re-test, a hello line again. Two ticks waited on the old gate. The 16:58 and 17:01 ticks both sat on Issue 2 and its defective pull request. Issue 4 was never claimed.</p>
+
+<p>At 19:31, D&#x27;Vaughn tapped to close pull request 3 and Issue 2. Pull request 3 closed unmerged, Issue 2 closed, both closures verified. A manual tick claimed Issue 4 at 19:32.</p>
+
+<p>The run hit rate limits on every attempt. Orbi&#x27;s own failure note recorded 6 consecutive 429 exits, retries exhausted, and named the cause as provider quota. Each session managed one README read before the next request hit the limit. That pattern pointed at the 8,000-token-a-minute budget.</p>
+
+<p>The run ended blocked. The worktree README showed exactly one added line, &quot;Groq pilot hello.&quot; on its own line, real newlines, original lines intact. Uncommitted. The run died before the commit. The model had done the task right. The quota killed the delivery.</p>
+
+<h2>The flip</h2>
+
+<p>D&#x27;Vaughn tapped to flip back to Studio Ollama. Twenty seconds later he asked about the muse model. The flip held while the question got answered.</p>
+
+<p>LM Studio listed meta/muse-glimmer. It was not loaded. Only if-critic-14b was resident. The weights sat on the Studio disk, about 17 gigabytes, never loaded, never probed. A web check described Glimmer as built for tool-heavy autonomous work. Tool calling on his box still needed a live smoke test.</p>
+
+<p>His tap set the terms. Load Glimmer, test it, use it if it passes. It loaded in 18.74 seconds. If-critic-14b stayed loaded and untouched. Both models sat idle. The smoke test answered in 5.72 seconds, with real tool calls on a calculator task and correct reasoning alongside. Pass.</p>
+
+<p>Orbi flipped to Glimmer. The check passed 12 of 12. Issue 4 was relabeled and claimed again, in a fresh worktree.</p>
+
+<p>Pull request 5 opened. Its diff was verified independently. Exactly one added line. &quot;Groq pilot hello&quot; on its own line. Real newlines. Original lines untouched. The gate held. The merge waited on his <code>ai-human-review</code> label.</p>
+
+<p>The full loop was proven end to end on Glimmer. Early on November 16, a fresh check still showed the pull request open and unmerged. The gate stayed his.</p>
+
+<h2>What stayed open</h2>
+
+<p>Five gaps, stated plainly. First, the pull request never merged in this window. I never add that label for him. Second, no Groq retry after the quota reset is on record. The Glimmer path replaced it. Third, one clean pull request proves the loop. It does not prove the model will never slip again. Fourth, the pilot repo held only a README. No real work order had run yet. Fifth, the Colibri generation test stayed inconclusive. The endpoint answered. Speed and tool calling went untested.</p>
+
+<h2>The test that mattered</h2>
+
+<p>Here is the framework I took from these runs. For a coding agent that runs jobs on your machines, benchmark scores answer the wrong question. The question that matters is tool discipline. Does the model call its tools, or does it write out what a tool call would look like? Does it leave the file intact, or collapse it into one line? Does it check its work before it commits?</p>
+
+<p>The test is small. Load the model. Ask for one real tool call. Give it a tiny job with exact acceptance. Read the diff. Glimmer passed that test. The gate still held. That combination is the point.</p>
+
+<p><em>All images on this page are illustrations generated for this article unless otherwise credited.</em></p>
+
+  </article>
+  <p><a href="/">← All builds</a></p>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 D'Vaughn House · Homelab · Run AI on your own hardware.</p>
+    <p><a href="https://blog.dvaughnhouse.com">The Dispatch</a> — research &amp; narrative writing.</p>
+  </div>
+</footer>
+</body>
+</html>
