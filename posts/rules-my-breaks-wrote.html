@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Rules My Breaks Wrote — Homelab</title>
+<meta name="description" content="Every rule I run this homelab by was written by something that broke first. Six of them, each with the break that earned it.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,700,800|newsreader:400,400i,500,600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">Home<span>lab</span></a></div>
+    <nav class="site">
+      <a href="/">Builds</a>
+      <a href="/about.html">About</a>
+      <a href="https://blog.dvaughnhouse.com">The Dispatch</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="post">
+    <h1>The Rules My Breaks Wrote</h1>
+    <p class="meta">by D&#x27;Vaughn House</p>
+    <p><em>Every rule I run this homelab by was written by something that broke first. Six of them, each with the break that earned it.</em></p>
+
+<p>I run my sites and my model servers from machines at home. Nothing here came with a manual for my setup. The rules I follow now came from evenings when something broke and I had to find out why. Each one below cost me time. Each one also saved me time later, because I stopped trusting the same shortcut twice. I wrote them down so the next break does not have to teach the same lesson again.</p>
+
+<h2>Fetch the served page before I call a deploy done</h2>
+
+<p>On November 11, the search box on my drug shortage tracker looked greyed out. A screenshot told a stranger story. The page carried the new search label. The styling and the script behind it were from the older build. The deploy served new page markup with old style and script files. The page expired right away. The style and script files stayed cached for four hours. A command line check looked fresh, because it holds no cache. It proved nothing about what a real browser saw. The fix was versioned files, with a new version marker on every interface deploy, starting with version 2 that night. Search shipped enabled by default, so a slow load could not leave it greyed out. Now I fetch the served bytes with a cache-busting check after every deploy. I look for the new markers in what the server sent. A success report is the start of the check. The served page is the proof.</p>
+
+<h2>Deploy from inside the folder</h2>
+
+<p>On October 28, sign-in worked at 9:10 in the evening. A deploy landed at 11:06 that night. After it, the sign-in address returned the homepage. Every unknown address returned the homepage too. The deploy had run from the wrong folder. The deploy tool only bundles the server functions when it runs from inside the project folder. From anywhere else, it uploads static files only. It uploaded 22 files. It gave no warning. It reported success. My first two redeploys repeated the mistake from the home folder. Deploying from inside the project folder restored the bundle. The output named the Functions bundle. The sign-in address returned its redirect. It bit again on November 7, from a shared script that forced the wrong folder. Now I deploy from inside the folder. I read the deploy output for the bundle line. Then I probe the sign-in address for its redirect.</p>
+
+<h2>A checkout counts when a test purchase lands</h2>
+
+<p>On October 25, I learned my store checkout took no money. The keys in place were placeholders. The checkout fell back to a mock payment reference. Confirming an order marked it paid, with no money moved and no provider check. No card form existed. The store had zero orders ever. Nobody had tested the path. The mock fallback came out. The checkout got a real card form and real verification. Still, I did not call it done. On November 15, I ran a live test-mode purchase. A $19 Ruck Reset, test card only. The card form loaded. The receipt screen confirmed the payment. The order number was GLEN-IBN4EEXO. A database read-back confirmed the order had succeeded, with a paid time and a payment reference attached. That purchase made the checkout real. Now a payment path is done only when a live test-mode purchase proves it. A green test suite and a clean code review do not prove it. Only money moving in test mode proves it.</p>
+
+<h2>Test a data fix against the real data first</h2>
+
+<p>On November 11, one tab on my operations dashboard crashed. A funding record was missing a field the page expected. I repaired the record. I filled in the missing fields from the record&#x27;s own notes. I added a deadline of November 10, already past. Minutes later, the whole dashboard would not load at all. One line in the dashboard code used the wrong variable name. That line only ran when a record carried a deadline of today or earlier. No open record had carried one before, so the line had never run. My repair made the record more complete, so the bad line ran. I reproduced the failure with the real data before touching the code again. The fix was one word. The dashboard loaded, with the repaired record flagged for its past deadline. Now I run the startup check against the real data before deploying a data fix. A repair that completes a record can wake code that only fires on complete records. I test that code path first.</p>
+
+<h2>Check memory before I relaunch anything</h2>
+
+<p>On November 16, my Mac Studio had rebooted. A model engine setup had died mid-start. The machine looked quiet. Load sat at 3.2. The processor was 89% idle. I relaunched the engine. It loaded partway, then died out of memory. The process list told the story. Other services had started themselves again after the reboot. One model server held about 18GB of memory. The engine I wanted needed about 46GB out of 64GB. The 18GB hold broke the fit. The processor numbers had said nothing about memory. I stopped the competing model servers. The held memory freed up. I relaunched the engine. It came up ready. Now I check what holds memory before I relaunch anything after a crash. A quiet processor is a fact about the processor. It says nothing about free memory.</p>
+
+<h2>A submission counts when the approval lands</h2>
+
+<p>On October 25, I submitted an application for the Meta hackathon before the 11:59 deadline that night. I built a schedule around it. The build window ran October 26 to November 4. I blocked 10 to noon on the build days. The approval never came. The event ran rolling review with a cap of 20,000. Approvals were due by 9 in the morning on October 26. A rejection email arrived at 3:28 that morning. It said the event had reached capacity and could not approve my application. The rejection was about volume. The event had warned about that before I submitted. The build window went moot. The calendar blocks went moot with it. Now I verify the approval before I build a schedule. A submitted form is a step. An approval is the gate. I check for the approval message first.</p>
+
+<h2>The list keeps growing</h2>
+
+<p>Six rules. Six breaks. I keep the list short on purpose. A long list gets ignored. A short list gets checked. The next break will add a line. I would rather add the line than learn the same lesson twice.</p>
+
+<p><em>All images on this page are illustrations generated for this article unless otherwise credited.</em></p>
+  </article>
+  <p><a href="/">← All builds</a></p>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 D'Vaughn House · Homelab · Run AI on your own hardware.</p>
+    <p><a href="https://blog.dvaughnhouse.com">The Dispatch</a> — research &amp; narrative writing.</p>
+  </div>
+</footer>
+</body>
+</html>
