@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>I Stopped the Factory to Test a 20GB Model — Homelab</title>
+<meta name="description" content="A new small model passed both its tests on my Mac Studio. It still lost, because 64GB of RAM only fits one brain at a time.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,700,800|newsreader:400,400i,500,600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">Home<span>lab</span></a></div>
+    <nav class="site">
+      <a href="/">Builds</a>
+      <a href="/about.html">About</a>
+      <a href="https://blog.dvaughnhouse.com">The Dispatch</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="post">
+    <h1>I Stopped the Factory to Test a 20GB Model</h1>
+    <p class="meta">by D&#x27;Vaughn House</p>
+    <p><em>A new small model passed both its tests on my Mac Studio. It still lost, because 64GB of RAM only fits one brain at a time.</em></p>
+
+<p>Saturday morning at 7:28 I stopped the model that runs my factory to test a model that fits in 20GB. Strata was hot. It was building the factory queue, Factory #03 in progress. I told Janine to pause it and test Inkling-2-Mini clean. While Strata was down, the queue stalled and the factory bot retried seven times. That was the price of the test. I paid it on purpose. I wanted to know if a 20GB model could do the work.</p>
+
+<h2>The pull needed a newer Ollama first</h2>
+
+<p>Ollama on the Studio was 0.40.16. The pull failed with Error 412. The model needs a newer Ollama. Version 0.40.17 is the release that adds Inkling 2 Mini, Apple silicon only in that release. Updating Ollama is an install on my Studio, so it needed my tap. I gave it. Version 0.40.17 went in, hash verified, old app backed up. The pull worked. Twenty gigs at 53 MB per second at the finish. Model on disk, inkling-2-mini:latest. Disk had room, 165GB free, and it already held three other models. Room was never the problem. Memory was.</p>
+
+<h2>Four tries hit the same wall</h2>
+
+<p>Four tries ran with Strata hot. Three died out of memory. The second loaded and generated, then the SSH session dropped and took the output with it. Default context, 262144 tokens. MLX panic. Metal out of memory. Context cut to 8192. It loaded once, 22GB, GPU at 100 percent. It generated for a minute forty on the server side. The SSH session dropped at about 62 seconds, so the output went with it. Warm retry. Out of memory again. Context 2048, thinking off, 16 tokens. Out of memory again.</p>
+
+<p>Strata was at 65 percent CPU, generating for the factory queue. Logic Pro was open too. Free RAM was swinging between 72MB and 16GB. Inkling needs about 22GB of Metal next to Strata. The machine has 64GB total. The math did not fit. That is when I said pause Strata and test it clean.</p>
+
+<h2>The pause, then two passes</h2>
+
+<p>Pause took both Strata services out. Ports 8080 and 8081 free. Free RAM 11.7GB. Then the two tests.</p>
+
+<p>Test one. Reply with exactly the words inkling-ok. It did. 15.1 seconds total. Load 5.3, prompt eval 5.9, eval 3.8, 61 tokens. Clean pass.</p>
+
+<p>Test two. Write a Python function that parses a CSV of drug-shortage events and returns the five most frequent drugs, with a test. It wrote it. Stdlib only. Counter, date validation, status filter, sample test. I pulled the code out and ran it. Tests passed. Exit 0. Counts checked correct. Total 115.5 seconds. 4098 tokens. 35.6 tokens a second. Thinking took 9,246 characters.</p>
+
+<p>The code was good. The wait was the story. A simple function took almost two minutes, and most of that was the model thinking.</p>
+
+<h2>It passed and still lost</h2>
+
+<p>Inkling works. The code runs. It is slow, and it cannot share the machine with Strata. One or the other, not both. Strata stays the default. That was the rule before the test. Replace Strata for coding work only if Inkling beats it on the coding prompt and loads next to it, or with a clear swap procedure. It failed the co-run, and 115.5 seconds for a simple function is no win on its own. So Strata stays.</p>
+
+<p>Restart proved it. Both services back, new PIDs, model loaded in about 100 seconds, chat completion returned exactly strata-ok. First try hit a test-parameter fault, max tokens 20 in reasoning. That was my test setup, not Strata. Second try was clean. Ollama showed nothing running after. Clean state. The factory queue resumed with a fresh session at 07:56.</p>
+
+<h2>Two tests still unrun</h2>
+
+<p>The plan had four tests. Two ran. The agentic file-write check and the vision check did not run. The pause was short and the queue was waiting. They stay open. A model that writes working code still has to prove it will not delete a file without asking, and it still has to prove it can read a screenshot. Those are the next two tests. They remain to be run.</p>
+
+<h2>Proven and parked</h2>
+
+<p>The 20GB model is real. It writes working code. It just does not fit next to the model that runs the factory, and a simple function took almost two minutes, most of that thinking. The open question is the swap. A procedure to park Strata, run Inkling, and bring Strata back without stalling the queue. Until that procedure exists, Inkling sits on disk, proven and parked.</p>
+
+<p><em>All images on this page are illustrations generated for this article unless otherwise credited.</em></p>
+  </article>
+  <p><a href="/">← All builds</a></p>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 D'Vaughn House · Homelab · Run AI on your own hardware.</p>
+    <p><a href="https://blog.dvaughnhouse.com">The Dispatch</a> — research &amp; narrative writing.</p>
+  </div>
+</footer>
+</body>
+</html>

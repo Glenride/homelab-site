@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orbi Got a New Brain Overnight — Homelab</title>
+<meta name="description" content="Glimmer was found quiet at 2:40 in the morning. Naomi was already awake. Orbi never missed a tick.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,700,800|newsreader:400,400i,500,600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">Home<span>lab</span></a></div>
+    <nav class="site">
+      <a href="/">Builds</a>
+      <a href="/about.html">About</a>
+      <a href="https://blog.dvaughnhouse.com">The Dispatch</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="post">
+    <h1>Orbi Got a New Brain Overnight</h1>
+    <p class="meta">by D&#x27;Vaughn House</p>
+    <p><em>Glimmer was found quiet at 2:40 in the morning. Naomi was already awake. Orbi never missed a tick.</em></p>
+
+<p>November 21 started with a factory run. Forty-one theses. Naomi reasons each one into a plan. Orbi builds from the plan. That was the order. Before anything started, Naomi got checked first. She was up. Her model was loaded, 32768 context at the 2:40 morning check. She reasoned the first plan in about ten seconds, 598 tokens. Small group meetups for loneliness. That part worked fine.</p>
+
+<p>Then Orbi got checked. Orbi is the builder. It polls for work every five minutes. Its brain was Glimmer, served by LM Studio on the Mac Studio. The address answered empty. That was the iMac on the home network. The VM tried too, through the tailnet proxy. Empty again. Two probes. Same answer. Nothing came back.</p>
+
+<p>The timer itself was fine. It was still active. Its last run had finished at 02:40:59 with no ready work. The clock kept ticking. The builder had no brain to think with.</p>
+
+<h2>What died</h2>
+
+<p>Glimmer. The model Orbi was set to call. LM Studio on port 1234. It answered empty from two different machines on two different paths. The record does not say why it went quiet. It only says it did. No crash note. No error line. Just an empty response where a model used to answer.</p>
+
+<p>That is the part that sticks with me. A builder that polls every five minutes will keep polling. It does not know its brain is gone. It had just found no work, and would keep finding none. The timer looked healthy. The queue looked empty. The real problem sat one layer down, in a model that had stopped answering.</p>
+
+<h2>The rewire</h2>
+
+<p>Naomi was already running on the same machine. Strata serves her. A forwarder carries her out to port 8081. She had just proved herself on the first plan. So Orbi got pointed at her.</p>
+
+<p>The old Glimmer settings were backed up first. Then the provider changed to strata-naomi, at the 8081 address. The model changed to qwen3.8-flash-next-q2_0. The config changed to match. That was the whole job. No new install. No new server. One brain swapped for another that was already awake.</p>
+
+<p>Then the check. <code>orbi check</code> came back 12 out of 12. Prerequisites ok. Model provider ok for strata-naomi. Twelve checks, twelve passes. That is the number I wanted before anything else ran.</p>
+
+<h2>The proof came five minutes later</h2>
+
+<p>At 02:45:59, Orbi claimed the first job. Issue number two in the factory repo. The first prototype. At 03:00:58 it opened pull request number twenty. One page, five meetups, RSVP and attended tracking. It merged at 03:21. The new brain did real work inside the same hour it was plugged in.</p>
+
+<p>That is the whole story. A model was found quiet at 2:40 in the morning. Another one was already up. The rewire took minutes. The check passed twelve out of twelve. And the first build landed before sunrise.</p>
+
+<p><em>All images on this page are illustrations generated for this article unless otherwise credited.</em></p>
+  </article>
+  <p><a href="/">← All builds</a></p>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 D'Vaughn House · Homelab · Run AI on your own hardware.</p>
+    <p><a href="https://blog.dvaughnhouse.com">The Dispatch</a> — research &amp; narrative writing.</p>
+  </div>
+</footer>
+</body>
+</html>
