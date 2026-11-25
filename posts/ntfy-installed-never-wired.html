@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ntfy Is Installed. Nobody Sends It Anything. — Homelab</title>
+<meta name="description" content="On October 22, on my tap, Janine put a phone alert system on the iMac. Four weeks later it had sent three messages. All three were tests from the day she installed it.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,700,800|newsreader:400,400i,500,600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">Home<span>lab</span></a></div>
+    <nav class="site">
+      <a href="/">Builds</a>
+      <a href="/about.html">About</a>
+      <a href="https://blog.dvaughnhouse.com">The Dispatch</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="post">
+    <h1>ntfy Is Installed. Nobody Sends It Anything.</h1>
+    <p class="meta">by D&#x27;Vaughn House</p>
+    <p><em>On October 22, on my tap, Janine put a phone alert system on the iMac. Four weeks later it had sent three messages. All three were tests from the day she installed it.</em></p>
+
+<p>ntfy is a small self-hosted service that pushes alerts to your phone. Any service on the machine posts a message to a topic, and the phone buzzes. I wanted it as the replacement for Slack notifications. I flagged it on October 2 in the outbound plan. Twenty days later, on my tap, it went in as part of the Tier 1 core stack on the iMac.</p>
+
+<h2>The install went fine</h2>
+
+<p>The install itself gave me no trouble. ntfy took port 8086 because 8080 already belonged to ThinkTank. The topic is called homelab. Two users went in with it. Mine as admin. Alerts as a write-only publisher, the account services would use to post. A test message went out and read back clean.</p>
+
+<p>Then the password fought back. The generated password was base64 with characters that look alike on a phone screen. Capital O next to zero. Lowercase l. Double slashes. The credentials did not work for me. The server said they did. The password itself was the problem. Janine reset it to hex letters and digits only, and the new password worked on the home network and the tailnet address. A fresh test alert went out so it would be waiting when I subscribed.</p>
+
+<p>That was October 22. Three messages total. All tests. All that day.</p>
+
+<h2>Janine read the wrong number</h2>
+
+<p>On November 20 I asked why it was installed and never used. Janine checked the server stats and told me my phone was never subscribed. The stats said subscribers zero. I sent screenshots. I had subscribed on October 22, the day of the install. All three test messages sat in the app on my phone, on the home address.</p>
+
+<p>The number counts live connections, not subscriptions. I was subscribed the whole time. Janine read the wrong number and told me the wrong story. I corrected it in the same turn.</p>
+
+<h2>Nothing to say</h2>
+
+<p>The subscription was never the problem. The sending side was. Healthchecks had four checks ready on install day. Morning sweep. Evening sweep. Monday digest. Weekday job scraper. The ping addresses never went into the crons. changedetection never got a notification address. Nothing ever published to the topic after the tests.</p>
+
+<p>The container itself is fine. On November 20 it had been up six days and healthy. It got rebuilt November 14 during the certificate patching. It had crash-looped on November 6. That is over. A healthy container with nothing to say.</p>
+
+<h2>The call is still mine</h2>
+
+<p>There are two ways this ends. Wire the senders in and let the phone buzz when a sweep misses or a page changes. Or pull the container and free the slot. That call is mine. It was still open when the day closed.</p>
+
+<p>The tool did its part on day one. It has waited four weeks for something to say.</p>
+
+<p><em>All images on this page are illustrations generated for this article unless otherwise credited.</em></p>
+  </article>
+  <p><a href="/">← All builds</a></p>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 D'Vaughn House · Homelab · Run AI on your own hardware.</p>
+    <p><a href="https://blog.dvaughnhouse.com">The Dispatch</a> — research &amp; narrative writing.</p>
+  </div>
+</footer>
+</body>
+</html>
