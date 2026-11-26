@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Ghost Fix: Mask It, Then Remove It — Homelab</title>
+<meta name="description" content="Disable told it to stay down. It came back anyway. So I made it unable to start, then I took away the thing it was serving.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,700,800|newsreader:400,400i,500,600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">Home<span>lab</span></a></div>
+    <nav class="site">
+      <a href="/">Builds</a>
+      <a href="/about.html">About</a>
+      <a href="https://blog.dvaughnhouse.com">The Dispatch</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="post">
+    <h1>The Ghost Fix: Mask It, Then Remove It</h1>
+    <p class="meta">by D&#x27;Vaughn House</p>
+    <p><em>Disable told it to stay down. It came back anyway. So I made it unable to start, then I took away the thing it was serving.</em></p>
+
+<p>I fixed this exact bug once. Then it came back. That is the short version. The longer version is the fix itself, and the fix is why this piece exists. The hunt already has its own piece. This one is about what ended it.</p>
+
+<h2>Disable sounded final</h2>
+
+<p>On October 24, the stale connector on the old box got stopped and disabled. The site went stable. That looked done. It was not done.</p>
+
+<p>On October 27, the diagnosis came back at 5:32 in the evening. Same stale connector, back from the dead. It had been running again since 5:08 in the morning UTC on October 25. Process ID 23106. Its config had never changed. It still pointed the blog at the old box on port 2368. It still had no rule for the dashboard. Anything it grabbed for the dashboard came back a catch-all 404.</p>
+
+<p>It was also serving a stale copy of the blog. Seven posts. The newest was from October 21. The current day&#x27;s post was absent entirely. The edge spread requests across the current connector and the stale one. A request that landed on the current host got the live blog. A request that landed on the old box got a 404 where the article should have been. Same address, two answers, no pattern you could see from one load.</p>
+
+<p>Disable sounds final. It is a polite request. A disabled service skips boot. A trigger can still wake it up. Something on that box woke it up. I still do not know what.</p>
+
+<h2>The fix had two parts</h2>
+
+<p>I got the go-ahead at 5:33 that evening. The words were plain. Apply the fix. Stop, mask, and remove the stale Ghost.</p>
+
+<p>The tunnel in question carries the ID 330198c8-d5ff-44fc-b354-dc66635fe7df. Two connectors claimed it. One was current. One was stale. The fix had to end the stale one for good.</p>
+
+<p>Part one was the service. Stop it. Disable it. Then mask it. Masking is the stronger version of disabling. Masking points the service at nothing. It cannot start at boot. It cannot start from a trigger either. There is nothing there to start.</p>
+
+<p>Part two was the container. Stop the stale blog container. Remove it entirely. The container was the stale site itself. Seven old posts, sitting there, ready to serve. As long as it existed, any connector that woke up had something stale to hand out. The rollback had to go.</p>
+
+<h2>The mask fought back</h2>
+
+<p>The mask did not land on the first try. It failed. The real unit file was still in place, and it blocked the symlink the mask needed. So I moved the real unit file aside first. Then the mask went through clean.</p>
+
+<p>After that, the checks read the way they should. The service showed masked. It showed inactive. The symlink pointed at nothing. That is the whole point of masking. Disable leaves a service sitting there, waiting for a reason to run. Masking leaves it with nowhere to run from.</p>
+
+<h2>Take away the rollback</h2>
+
+<p>Then the container went. Docker stop, then docker remove. The stale blog container was gone from the box.</p>
+
+<p>I had kept that container as a rollback when the blog moved to its current host on October 22. Sensible at the time. Careful, even. But a rollback is only safe if nothing can reach it. The stale connector could reach it. The edge could reach the stale connector. So the rollback was a live stale site with a road straight to it. Keeping it meant keeping the bug one trigger away from coming back.</p>
+
+<p>The box got checked right after. No cloudflared process running. Nothing listening on port 2368. Service masked and inactive. The old host could not answer anymore.</p>
+
+<h2>Prove it stayed dead</h2>
+
+<p>The fix got verified the boring way. Twenty rounds across three addresses. The article. The dashboard login page. The dashboard front page. Every round came back 200. No flapping. The checks ran from 5:36 to 5:40 that evening, over several minutes.</p>
+
+<p>The shape of the test matters here. Four clean loads prove nothing against a bug like this. Four loads can all land on the good connector by luck. That is luck with a good story. Twenty rounds across every address the tunnel serves, over minutes, gives the bug time to show up. It did not show up.</p>
+
+<p>One wrinkle showed up instead. Right after the fix, the Cloudflare side still listed three stale box connections. That was inventory lagging behind reality. The probes said clean. The box said clean. I trusted the probes and the box, and they were right.</p>
+
+<h2>What I still do not know</h2>
+
+<p>What woke the disabled service on October 25 is still open. No timer was found on the old box. No scheduled job was found either. A review of its logs is still open.</p>
+
+<p>Masking means that service cannot wake again through that path. The trigger itself is a separate question, and it stays open. Fixed and explained are two different words. This one is fixed. It is not fully explained. I will not pretend otherwise.</p>
+
+<h2>The rule</h2>
+
+<p>A move is done when the old host cannot answer anymore. Stopped, disabled, masked, removed. That is four steps, and the first two were not enough. I learned that twice on the same bug. A leftover is a live thing. Treat it like one, or it will come back and prove it.</p>
+
+<p><em>All images on this page are illustrations generated for this article unless otherwise credited.</em></p>
+  </article>
+  <p><a href="/">← All builds</a></p>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 D'Vaughn House · Homelab · Run AI on your own hardware.</p>
+    <p><a href="https://blog.dvaughnhouse.com">The Dispatch</a> — research &amp; narrative writing.</p>
+  </div>
+</footer>
+</body>
+</html>
