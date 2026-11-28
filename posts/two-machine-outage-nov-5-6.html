@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>One Machine Dark, One Link Dead — Homelab</title>
+<meta name="description" content="One machine went dark overnight. The other never went off at all. A post never went out, and the cause is still unknown.">
+<link rel="stylesheet" href="/styles.css">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=bricolage-grotesque:500,700,800|newsreader:400,400i,500,600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <div class="brand"><a href="/" style="color:inherit;text-decoration:none">Home<span>lab</span></a></div>
+    <nav class="site">
+      <a href="/">Builds</a>
+      <a href="/about.html">About</a>
+      <a href="https://blog.dvaughnhouse.com">The Dispatch</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <article class="post">
+    <h1>One Machine Dark, One Link Dead</h1>
+    <p class="meta">by D&#x27;Vaughn House</p>
+    <p><em>One machine went dark overnight. The other never went off at all. A post never went out, and the cause is still unknown.</em></p>
+
+<p>I run my sites and my model servers from two machines at home. The iMac holds the blog and the dashboards. The Mac Studio holds the local models. On November 5, the Studio stopped answering from anywhere remote. About a day later, the iMac did the same. And the part I have to say first is the part nobody likes to print. I still do not know why.</p>
+
+<h2>The Studio went first</h2>
+
+<p>The Studio dropped off around 1:30 in the morning on November 5. That is when its Tailscale node was last seen. Every check after that came back the same way. SSH closed the connection. The model endpoint on port 1234 answered nothing. By the early-afternoon check the machine had been unreachable for about thirteen hours.</p>
+
+<p>Work piled up behind it right away. A new build called M4 was ready to install on the Studio. It could not run. The install sat waiting on a machine nobody could reach. He asked that same day whether friends could connect to the Studio and use his local models. The answer was plain. Nothing was shareable until the link came back.</p>
+
+<p>The iMac was fine that day. At 11:24 in the morning the check showed the iMac side all healthy. The workshop service was active. The containers were up. The Studio was the only machine that looked dark from the outside, and it stayed unreachable through the night. A check at 9:40 that evening tried SSH twice. Both tries failed the same way. Proxy closed.</p>
+
+<h2>Then the iMac</h2>
+
+<p>The iMac went quiet around 1:06 in the morning on November 6. The workshop dashboard refresh runs every few minutes. It collects a snapshot and pushes it to the iMac. Starting at 1:06, every run failed the same way. Exit 1. Push failed. Connection closed by an unknown port. The runs at 1:51, 2:46, 4:52, and 7:17 all failed the same way. The dashboard snapshot went stale and stayed stale. There was nothing to fix from the outside. The machine was not reachable.</p>
+
+<p>So by Friday morning, the iMac was unreachable and the Studio&#x27;s Tailscale node was still down. The node&#x27;s link had been dead for about thirty hours. The iMac had been gone for about seven hours.</p>
+
+<h2>Friday morning, nothing answered</h2>
+
+<p>The Dispatch publisher ran at about 8:48 on Friday morning. It found nothing to publish to. The blog answered with a Cloudflare 530 and Error 1033. That error means the tunnel could not resolve its host. The blog lives on the iMac. The iMac was unreachable. So the post could not go out.</p>
+
+<p>The piece for that slot was called The Machine in the Corner. It stayed ready in the bank. It did not go anywhere. The morning tease for it was skipped too. There was no post to tease.</p>
+
+<p>The morning dashboard check at 9:41 told the same story from three directions. The workshop dashboard, the main site, and the map all returned 530. The iMac, the InstaBox box, and the Mac Studio were all unreachable over the network. The model endpoint on the Studio still answered nothing.</p>
+
+<p>Not everything broke. The Homelab post went out fine at 8:47 that morning. It is a static site, and static sites do not need the iMac to be awake. The Den post went out through Shopify. That path never touched either machine. The outage took the blog and the dashboards. It left the rest standing.</p>
+
+<h2>The iMac came back</h2>
+
+<p>The iMac came back around 9:48 that morning. It had rebooted. A check at 10:01 showed it had been up for thirteen minutes. SSH worked again. The blog answered 200 by mid-morning. By that evening the iMac was serving a brand new landing page. The machine was back, and it was back to work the same day.</p>
+
+<p>That is the whole recovery story for the iMac. It went dark around 1:06. It came back around 9:48. About eight and a half hours. Nobody touched it from the outside during that window. There was nothing to touch.</p>
+
+<h2>The Studio was never off</h2>
+
+<p>Here is the part the record corrected. That evening, at 7:11, he corrected the story. The Studio machine had not been offline at all. The machine was up. Its Tailscale node was down. The node had been down since about November 5. That is why every remote path failed. The iMac could not ping it. The VM could not reach it over SSH. The model endpoint answered nothing. All of it ran through the same dead node.</p>
+
+<p>The machine was fine. The connection was not. The fix lives on the Studio itself. Restart Tailscale there. Reconnect the node. Until that happens, the remote path stays dead, and the model endpoints and the M4 install stay blocked with it. He was sitting at the Studio that morning and bound the model server to localhost. It looked fine from the chair in front of it. From anywhere else, it was still unreachable. Localhost is only local.</p>
+
+<p>So the honest version of the story is narrower than the first version. One machine went dark and came back. The other machine never went off. Its network link did.</p>
+
+<h2>What I still do not know</h2>
+
+<p>I do not know what took the iMac down. I do not know what dropped the Studio&#x27;s Tailscale node. The record has no cause for either one. It has times. It has error codes. It has a string of failed checks. It does not have a reason.</p>
+
+<p>That is worth saying plainly, because the tempting thing is to fill the gap with a guess. The record holds no cause for either machine. The last time this happened, the cause was found. The iMac had suspended at 1:10 in the morning on October 24, and the log showed it. This time, no log has given up a reason yet.</p>
+
+<p>Two machines. One came back after a reboot. The other is still waiting on a reconnect. The post that Friday never went out. The rest of the morning went out fine. And the cause is still unknown.</p>
+
+<p><em>All images on this page are illustrations generated for this article unless otherwise credited.</em></p>
+  </article>
+  <p><a href="/">← All builds</a></p>
+</div>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© 2026 D'Vaughn House · Homelab · Run AI on your own hardware.</p>
+    <p><a href="https://blog.dvaughnhouse.com">The Dispatch</a> — research &amp; narrative writing.</p>
+  </div>
+</footer>
+</body>
+</html>
